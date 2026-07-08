@@ -57,7 +57,6 @@ instantaneele se reîmprospătează cu `git archive`.
 
 ## Ce urmează aici
 
-1. `docs/PLAN-INTEGRARE.md` — ordinea joncțiunilor și conductelor din
-   INTENT, cu criterii de ieșire verificabile per etapă (se dezvoltă cu
-   Ultraplan, pe acest repo).
+1. [`docs/PLAN-INTEGRARE.md`](docs/PLAN-INTEGRARE.md) — ordinea etapelor cu
+   criterii de ieșire verificabile și deciziile consemnate (2026-07-08).
 2. Compoziția: instalarea componentelor împreună, moștenind installer-ul.
