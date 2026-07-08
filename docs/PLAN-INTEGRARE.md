@@ -155,6 +155,16 @@ programator și transport.
 *Criteriu de ieșire:* cron-ul livrează digestul pe Telegram; a doua rulare în
 aceeași zi nu repetă aceleași itemi.
 
+*Stare: implementat 2026-07-08 (partea aipm + scriptul de cron).* Migrarea
+0006 (report_sent), `reports/digest.py` (text RO determinist, fără LLM;
+termen schimbat = element nou; degradarea Odoo declarată în text), `POST
+/api/reports/digest` (mark/preview), scriptul `aipm-digest.py` pe tiparul
+audit-board (`pm cron create "0 8 * * *" --no-agent --script aipm-digest.py
+--deliver telegram`). Criteriul de ieșire = `test_digest.py` + rulare dublă
+pe viu (a doua tace). **Rămas:** crearea efectivă a cron-ului pe server
+(după configurarea Telegram) și al doilea digest, al cozii de verificare,
+către patron (cere chat_id-ul lui prin vamă).
+
 ### 10. Jurnalul conversației cu memoria
 
 Firul de chat al aipm trăiește azi doar în memorie de proces și piere la restart.

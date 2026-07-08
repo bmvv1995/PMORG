@@ -37,6 +37,10 @@ class ReplayRequest(BaseModel):
     source_ref: str
 
 
+class DigestRequest(BaseModel):
+    mark: bool = True
+
+
 def _memory_row(conn, row) -> dict:
     item = dict(row) | {"id": str(row["id"])}
     for key in ("created_at", "due_at"):
@@ -281,6 +285,14 @@ def register(app: FastAPI) -> None:
             except (receipts.NoChatterTarget, AdapterError) as e:
                 receipt_outcome = {"outcome": "failed", "detail": str(e)[:200]}
         return {"status": "ok", "receipt": receipt_outcome}
+
+    @app.post("/api/reports/digest")
+    def reports_digest(req: DigestRequest):
+        """Digestul proactiv (etapa 9): text determinist RO din elementele netrimise.
+        mark=true consemnează trimiterea (report_sent); mark=false = previzualizare."""
+        from .reports.digest import build_digest
+
+        return build_digest(mark=req.mark)
 
     @app.get("/api/reports/{code}")
     def report(code: str):

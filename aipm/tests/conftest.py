@@ -38,7 +38,7 @@ def clean_db(test_dsn, monkeypatch):
         conn.execute(
             "TRUNCATE memory_item, memory_anchor, memory_receipt, ingest_log, "
             "ingest_cursor, external_entity_mention, external_entity_status, "
-            "identity_map, project_map, chat_turn CASCADE"
+            "identity_map, project_map, chat_turn, report_sent CASCADE"
         )
     yield db
     db.close_pool()
