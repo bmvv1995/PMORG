@@ -27,13 +27,23 @@ determinist zilnic al board-ului (SQL, fără LLM).
 
 ## Instalare
 
-Cerințe pe server: `tmux`, `python3`, `git`, `claude` (autentificat),
-`hermes` (instalat). Apoi:
+Cerințe pe server: `tmux`, `python3` (+venv), `git`, `claude` (autentificat),
+`hermes` (instalat), PostgreSQL 16 cu extensiile `pgvector` și `unaccent`
+(pentru pilonul de memorie). Apoi:
 
 ```
 ./install.sh              # idempotent; cu wizard pentru secrete
 ./install.sh --no-wizard  # doar infrastructura, fără prompturi
+PMORG_SKIP_AIPM=1 ./install.sh   # fără pilonul de memorie (doar stack-ul de proces)
 ```
+
+Memoria (aipm) se instalează prin `install-aipm.sh` (apelat automat, rulabil
+și standalone): provizionează rolul + baza PostgreSQL, generează `.env` cu
+token real de autentificare, rulează migrările, pornește serviciul systemd și
+armează backup-ul zilnic (`pg_dump`, retenție 14). Per PLAN-INTEGRARE etapa 1,
+organul aterizează **inert**: `INGEST_ENABLED=false` și `ODOO_ADAPTER=fake` —
+conducta de sedimentare și Odoo real se deschid ulterior, prin decizie
+explicită, nu prin default.
 
 Cele 4 secrete cerute de wizard: token bot Telegram (@BotFather), Telegram
 id-ul ownerului, cheia API Anthropic (doar pentru workdir-ul PM — restul

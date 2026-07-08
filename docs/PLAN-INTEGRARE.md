@@ -39,6 +39,11 @@ Bucla de ingest se instalează **oprită** — memoria aterizează goală și in
 *Criteriu de ieșire:* pe un server curat, după instalare serviciul aipm rulează,
 migrat, cu token real; ingest oprit; un smoke-test HTTP trece.
 
+*Stare: implementat 2026-07-08* (`install-aipm.sh` + `INGEST_ENABLED` +
+backup zilnic; criteriul de ieșire verificat cap-coadă pe un mediu curat cu
+PostgreSQL 16 + pgvector: provizionare, migrări, serviciu, health cu
+`ingest=oprit`/`auth=da`, 401 fără token, backup restaurabil).
+
 ### 2. Tabelul de identități (D1) + proiectele din Odoo
 
 Tabel `identity_map` (cont Telegram → `res.partner`/`hr.employee`), populat prin

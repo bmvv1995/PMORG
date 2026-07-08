@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup-ul bazei de memorie aipm (pg_dump + retenție)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash %h/.local/bin/aipm-backup.sh __ROOT__/.env %h/aipm-backups

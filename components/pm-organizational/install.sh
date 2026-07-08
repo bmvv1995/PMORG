@@ -97,6 +97,14 @@ mkdir -p "$HOME/.hermes/scripts"
 [ -f "$HOME/.hermes/scripts/audit-board.py" ] || cp "$BASE/templates/audit-board.py" "$HOME/.hermes/scripts/"
 ok "script prezent (cron-ul zilnic se instalează după configurarea Telegram: pm cron create \"0 8 * * *\" --name audit-board --no-agent --script audit-board.py --deliver telegram)"
 
+# memoria (aipm) — PLAN-INTEGRARE etapa 1: organul se instalează inert
+if [ "${PMORG_SKIP_AIPM:-0}" = 1 ]; then
+  say "memoria (aipm)"
+  warn "sărită (PMORG_SKIP_AIPM=1) — produsul rulează fără pilonul de memorie"
+else
+  bash "$BASE/install-aipm.sh"
+fi
+
 if [ "$WIZARD" = 1 ]; then
   say "wizard — cele 4 secrete (Enter = sari peste)"
   ENVF="$HOME/.hermes/profiles/pm/.env"
