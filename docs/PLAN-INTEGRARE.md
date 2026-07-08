@@ -156,6 +156,12 @@ de fapt). Partea scrisă de utilizator se jurnalizează doar după etapa 4.
 *Criteriu de ieșire:* „ce a răspuns memoria săptămâna asta" are răspuns dintr-o
 interogare; jurnalul supraviețuiește restartului.
 
+*Stare: implementat 2026-07-08 pentru latura de asistent.* Migrarea
+`0004_chat_turn.sql` (append-only impus prin trigger, în carantină — nu e
+memorie, nu susține claims); `recall.answer` jurnalizează fiecare răspuns;
+criteriul de ieșire = `test_chat_journal.py`. Latura de utilizator rămâne
+nejurnalizată până la poarta de intimitate (etapa 4), conform P4.
+
 ### Chitanțele: rămân pe modul manual (D4)
 
 Nicio construcție acum. `RECEIPT_MODE` rămâne pe manual, omul din ecranul de
