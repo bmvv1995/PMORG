@@ -137,6 +137,14 @@ verificare. Itemii încheiați ies din rapoarte și din răspunsuri.
 *Criteriu de ieșire:* un angajament cu înregistrarea Odoo închisă dispare din
 „termene apropiate"; marcarea umană există și e auditabilă.
 
+*Stare: implementat 2026-07-08 (fără butonul de UI).* Migrarea 0005
+(closed_field/closed_values pe anchor_type, guvernate prin migrare; audit
+resolved_by/at), derivarea live în due_soon + commitments_missing (Odoo picat
+→ nimic exclus pe orb, raport declarat `degraded`), `POST
+/api/memory/{id}/resolve` (om, 409 la re-rezolvare). Criteriul de ieșire =
+`test_commitment_closing.py`. **Rămas:** butonul „încheiat" în pagina /review
+(UI) și, opțional, extinderea derivării live în selecția recall.
+
 ### 9. Rapoartele ajung singure pe Telegram
 
 Rapoartele există (`aipm/reports/queries.py`) dar întorc JSON și așteaptă să fie

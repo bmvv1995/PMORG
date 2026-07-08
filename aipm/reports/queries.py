@@ -5,6 +5,8 @@ Formularea textelor din UI = zonă liberă.
 """
 
 from .. import config, db
+from ..adapter import get_adapter
+from ..adapter.contract import AdapterError
 
 
 def _anchors_for(conn, memory_ids: list[str]) -> dict[str, list[dict]]:
@@ -42,6 +44,44 @@ def _items_payload(conn, rows) -> list[dict]:
     return items
 
 
+def _live_closed_ids(conn, items: list[dict]) -> tuple[set[str], bool]:
+    """Felia C (etapa 8, D3, P3-pur): id-urile itemilor al căror subject e închis
+    ACUM în Odoo — derivat live la fiecare apel, nu stocat (redeschiderea în Odoo
+    reactivează automat). Odoo indisponibil → nu excludem nimic pe orb, raportul
+    se declară degradat (P3: degradarea e vizibilă, nu tăcută)."""
+    closable = {
+        r["code"]: dict(r)
+        for r in conn.execute(
+            """SELECT code, odoo_model, closed_field, closed_values
+               FROM anchor_type WHERE closed_field IS NOT NULL"""
+        ).fetchall()
+    }
+    subject_ref: dict[str, tuple[str, int]] = {}
+    wanted: dict[str, set[int]] = {}
+    for i in items:
+        for a in i["anchors"]:
+            if a["role"] == "subject" and a["anchor_code"] in closable:
+                subject_ref[i["id"]] = (a["anchor_code"], a["odoo_res_id"])
+                wanted.setdefault(a["anchor_code"], set()).add(a["odoo_res_id"])
+    if not wanted:
+        return set(), False
+    adapter = get_adapter()
+    closed_refs: set[tuple[str, int]] = set()
+    try:
+        for code, ids in wanted.items():
+            t = closable[code]
+            rows = adapter.search_read(
+                t["odoo_model"], [("id", "in", sorted(ids))],
+                ["id", t["closed_field"]], context={"active_test": False},
+            )
+            for r in rows:
+                if r.get(t["closed_field"]) in t["closed_values"]:
+                    closed_refs.add((code, r["id"]))
+    except AdapterError:
+        return set(), True
+    return {mid for mid, ref in subject_ref.items() if ref in closed_refs}, False
+
+
 def due_soon() -> dict:
     with db.transaction() as conn:
         rows = conn.execute(
@@ -51,7 +91,14 @@ def due_soon() -> dict:
                ORDER BY due_at ASC""",
             (config.DUE_SOON_DAYS,),
         ).fetchall()
-        return {"report": "due_soon", "items": _items_payload(conn, rows)}
+        items = _items_payload(conn, rows)
+        closed_ids, degraded = _live_closed_ids(conn, items)
+        return {
+            "report": "due_soon",
+            "items": [i for i in items if i["id"] not in closed_ids],
+            "excluded_closed": len(closed_ids),
+            "degraded": degraded,
+        }
 
 
 def commitments_missing() -> dict:
@@ -69,10 +116,16 @@ def commitments_missing() -> dict:
                                  WHERE ma.memory_id = mi.id AND ma.role='owner')
                ORDER BY mi.created_at DESC"""
         ).fetchall()
+        missing_due = _items_payload(conn, no_due)
+        missing_owner = _items_payload(conn, no_owner)
+        closed_due, deg1 = _live_closed_ids(conn, missing_due)
+        closed_owner, deg2 = _live_closed_ids(conn, missing_owner)
         return {
             "report": "commitments_missing",
-            "missing_due": _items_payload(conn, no_due),
-            "missing_owner": _items_payload(conn, no_owner),
+            "missing_due": [i for i in missing_due if i["id"] not in closed_due],
+            "missing_owner": [i for i in missing_owner if i["id"] not in closed_owner],
+            "excluded_closed": len(closed_due | closed_owner),
+            "degraded": deg1 or deg2,
         }
 
 

@@ -157,6 +157,29 @@ def register(app: FastAPI) -> None:
                 raise HTTPException(404, "memory_item inexistent")
             return _memory_row(conn, row)
 
+    @app.post("/api/memory/{memory_id}/resolve")
+    def memory_resolve(memory_id: str):
+        """Felia A (etapa 8, D3): OMUL marchează angajamentul încheiat/înlocuit.
+        Audit P5: resolved_by + resolved_at. Itemii 'resolved' ies din rapoarte
+        și din recall prin filtrele status='active' existente."""
+        with db.transaction() as conn:
+            updated = conn.execute(
+                """UPDATE memory_item
+                   SET status='resolved', resolved_by='human', resolved_at=now()
+                   WHERE id=%s AND status='active' RETURNING id""",
+                (memory_id,),
+            ).fetchone()
+            if updated is None:
+                existing = conn.execute(
+                    "SELECT status FROM memory_item WHERE id=%s", (memory_id,)
+                ).fetchone()
+                if existing is None:
+                    raise HTTPException(404, "memory_item inexistent")
+                raise HTTPException(
+                    409, f"item cu status '{existing['status']}' — doar 'active' se poate rezolva"
+                )
+        return {"status": "resolved"}
+
     @app.post("/api/memory/{memory_id}/retract")
     def memory_retract(memory_id: str):
         with db.transaction() as conn:
