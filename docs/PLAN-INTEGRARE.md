@@ -62,6 +62,14 @@ ori), un autor mapat se fixează fără apel de ghicire; un autor nemapat nu pro
 niciun fapt cu autor, ci un gol înregistrat; tabelul se poate scrie doar prin
 migrare, nu din runtime.
 
+*Stare: implementat 2026-07-08, cu o parte rămasă.* Migrarea
+`0003_identity_map.sql` (identity_map + project_map), `engine/identity.py`
+(lookup determinist), cablarea în `pipeline.ingest_message(author_key=...)`;
+criteriul de ieșire e suita `test_identity_map.py` (autor mapat fixat cu zero
+apeluri LLM; nemapat → gol `autor:telegram:<id>`; API-ul nu are nicio rută de
+scriere spre vamă). **Rămas:** crearea `project.project` în Odoo la crearea
+board-ului — cere Odoo real, se face la trecerea pe `xmlrpc` (pre-go-live).
+
 ### 3. Identitatea expeditorului supraviețuiește drumului (fosta „problemă A1")
 
 Azi identitatea se pierde: gateway-ul știe cine scrie (allowlist), dar puntea
