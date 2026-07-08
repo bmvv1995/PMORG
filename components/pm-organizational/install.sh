@@ -64,10 +64,19 @@ else
 fi
 
 say "workdir-ul PM (mâini legate prin config)"
+# aceeași autodetecție ca în install-aipm.sh — pentru __AIPM_ROOT__ din mcp.json
+AIPM_ROOT=""
+for cand in "${PMORG_AIPM:-}" "$REPOS/PMORG" "$REPOS/pmorg" "$REPOS/pm-org" "$REPOS/aipm"; do
+  if [ -n "$cand" ] && [ -f "$cand/aipm/requirements.txt" ]; then
+    AIPM_ROOT="$cand"
+    break
+  fi
+done
 PMWD="$HOME/cc-sessions/pm"
 mkdir -p "$PMWD/.claude"
 [ -f "$PMWD/CLAUDE.md" ]              || sed "s|__HOME__|$HOME|g" "$BASE/templates/pm-workdir/CLAUDE.md"     > "$PMWD/CLAUDE.md"
-[ -f "$PMWD/.mcp.json" ]              || sed "s|__HOME__|$HOME|g" "$BASE/templates/pm-workdir/mcp.json"      > "$PMWD/.mcp.json"
+[ -f "$PMWD/.mcp.json" ]              || sed -e "s|__HOME__|$HOME|g" -e "s|__AIPM_ROOT__|${AIPM_ROOT:-$HOME/PMORG}|g" \
+                                             "$BASE/templates/pm-workdir/mcp.json"      > "$PMWD/.mcp.json"
 [ -f "$PMWD/.claude/settings.json" ]  || cp "$BASE/templates/pm-workdir/settings.json" "$PMWD/.claude/settings.json"
 ok "$PMWD"
 

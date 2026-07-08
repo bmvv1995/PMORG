@@ -97,6 +97,14 @@ def register(app: FastAPI) -> None:
         ).start()
         return result
 
+    @app.post("/api/recall")
+    def recall_only(req: ChatRequest):
+        """Citire PURĂ (PLAN-INTEGRARE etapa 7) — calea uneltelor PM-ului prin MCP.
+
+        Spre deosebire de /api/chat, întrebarea NU se ingestează: consumatorul e un
+        agent, nu un om — textul lui nu devine fapt (P1), deci nu se scrie nimic."""
+        return recall.answer(req.message, req.session_id)
+
     @app.get("/api/memory")
     def memory_list(
         kind: str | None = None,

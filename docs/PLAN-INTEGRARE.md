@@ -120,6 +120,13 @@ fiecare întrebare, deci nu poate fi refolosit ca atare.
 *Criteriu de ieșire:* PM-ul întreabă memoria prin MCP și numărul de rânduri din
 memorie rămâne neschimbat (zero scrieri).
 
+*Stare: implementat 2026-07-08.* `POST /api/recall` (citire pură, fără ingest) +
+trei unelte în `hermes-ops-mcp`: `aipm_recall`, `aipm_reports`,
+`aipm_review_queue`, cu suprafață de citire fixă (`READ_ENDPOINTS`) și token
+citit din `.env`-ul aipm (`AIPM_ENV_FILE`, setat de installer în `.mcp.json`).
+Criteriul de ieșire = `test_recall_readonly.py`; lanțul MCP→HTTP→aipm verificat
+pe viu prin protocolul stdio.
+
 ### 8. Închiderea angajamentelor (D3)
 
 Un angajament rămâne azi „activ" pentru totdeauna. Felia automată: derivat din
