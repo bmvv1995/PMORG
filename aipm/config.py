@@ -60,6 +60,10 @@ MAX_SOURCE_CHARS = _int("MAX_SOURCE_CHARS", 6000)
 EXTRACT_MIN_CONFIDENCE = _float("EXTRACT_MIN_CONFIDENCE", 0.50)
 DEDUP_SIM_THRESHOLD = _float("DEDUP_SIM_THRESHOLD", 0.90)
 
+# --- Poarta de intimitate (etapa 4, D2) ---
+# Fișier text, un termen/expresie pe linie; gol/absent = poarta inactivă.
+PRIVACY_DENYLIST_FILE = os.environ.get("PRIVACY_DENYLIST_FILE", "")
+
 # --- Chitanțe ---
 RECEIPT_MODE = os.environ.get("RECEIPT_MODE", "manual")  # manual (Faza 1) | auto (Faza 2+)
 RECEIPT_MAX_ATTEMPTS = _int("RECEIPT_MAX_ATTEMPTS", 10)

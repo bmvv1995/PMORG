@@ -112,6 +112,25 @@ if [ "${PMORG_SKIP_AIPM:-0}" = 1 ]; then
   warn "sărită (PMORG_SKIP_AIPM=1) — produsul rulează fără pilonul de memorie"
 else
   bash "$BASE/install-aipm.sh"
+
+  say "conducta de sedimentare (hook gateway → memorie) + poarta de intimitate"
+  PMPROF="$HOME/.hermes/profiles/pm"
+  mkdir -p "$PMPROF/hooks/aipm-sediment"
+  cp "$BASE/templates/hooks/aipm-sediment/HOOK.yaml" "$PMPROF/hooks/aipm-sediment/"
+  sed "s|__AIPM_ROOT__|${AIPM_ROOT:-$HOME/PMORG}|g" \
+      "$BASE/templates/hooks/aipm-sediment/handler.py" > "$PMPROF/hooks/aipm-sediment/handler.py"
+  ok "hook aipm-sediment instalat (activ la restartul gateway-ului)"
+  if [ ! -f "$PMPROF/privacy-denylist.txt" ]; then
+    cp "$BASE/templates/privacy-denylist.txt" "$PMPROF/privacy-denylist.txt"
+    ok "lista de intimitate creată (completeaz-o: $PMPROF/privacy-denylist.txt)"
+  fi
+  AIPM_ENV="${AIPM_ROOT:-$HOME/PMORG}/.env"
+  if [ -f "$AIPM_ENV" ] && ! grep -q "^PRIVACY_DENYLIST_FILE=" "$AIPM_ENV"; then
+    printf 'PRIVACY_DENYLIST_FILE=%s\n' "$PMPROF/privacy-denylist.txt" >> "$AIPM_ENV"
+    ok "PRIVACY_DENYLIST_FILE setat în .env-ul aipm"
+  fi
+  echo "   Conducta rămâne ÎNCHISĂ până la decizia explicită: INGEST_ENABLED=true"
+  echo "   în $AIPM_ENV + restart aipm (PLAN-INTEGRARE etapa 5)."
 fi
 
 if [ "$WIZARD" = 1 ]; then

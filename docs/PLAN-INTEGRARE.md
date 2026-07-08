@@ -82,6 +82,17 @@ falsificabil („From: altcineva"). Puntea rămâne transport, oarbă la identit
 autorul = persoana mapată din tabelul etapei 2; un text care pretinde alt autor
 nu poate păcăli sistemul.
 
+*Stare: implementat 2026-07-08, prin hook stock Hermes (fără modificare
+Hermes).* Descoperire-cheie: Hermes ([NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent))
+are un sistem de hooks la gateway; evenimentul `agent:start` livrează
+structural `user_id`-ul real (post-allowlist) + textul. Hook-ul
+`aipm-sediment` (template în pm-organizational, instalat de installer) trimite
+`author_key=telegram:<user_id>` către `POST /api/ingest/gateway`; identitatea
+trece prin vamă (etapa 2), nu prin text spoofabil. Limită stock: textul e
+trunchiat la 500 de caractere (candidat de contribuție upstream). Criteriul de
+ieșire = `test_gateway_pipe.py`. **Rămas:** testul cap-coadă pe Telegram real
+(bot de test + allowlist).
+
 ### 4. Filtrul de intimitate la intrare (D2)
 
 Lista „niciodată la AI" + potrivirea pe forme flexionate românești (diacritice,
@@ -92,6 +103,17 @@ rulări pe același text dau același rezultat.
 *Criteriu de ieșire:* un mesaj cu un termen interzis (inclusiv flexionat) nu apare
 în nicio scriere durabilă de pe server; test rulat de două ori, același rezultat.
 
+*Stare: implementat 2026-07-08 pe conducta memoriei; perimetru restrâns
+consemnat.* `engine/privacy.py`: determinist (pliere diacritice + prefix de
+cuvânt pentru flexiuni RO + expresii multi-cuvânt), lista ownerului în
+`~/.hermes/profiles/pm/privacy-denylist.txt` (versionată în git-ul
+organizației, P5); refuzul se consemnează FĂRĂ conținut și fără termeni.
+**Perimetru:** hook-urile Hermes sunt observatori — nu pot bloca mesajul spre
+agent, deci transcriptul Claude Code primește textul brut pe calea LLM;
+filtrarea completă la intrare ar cere o schimbare upstream în Hermes.
+Poarta de aici apără memoria (conducta aipm), litera plină a D2 rămâne
+deschisă ca decizie (acceptare perimetru vs. contribuție upstream).
+
 ### 5. Deschiderea sedimentării (prima conductă)
 
 Abia acum se pornește ingestul din conversațiile care trec prin PM. Cablarea e
@@ -100,6 +122,15 @@ mică — capetele există de ambele părți; etapele 2–4 sunt condiția, nu c
 *Criteriu de ieșire:* test cap-coadă pe date de test: mesaj pe Telegram → fapt
 memorat cu autor corect și ancoră corectă; rulat de două ori → același rezultat,
 fără dubluri.
+
+*Stare: implementat 2026-07-08; deschiderea rămâne decizie explicită.*
+Migrarea 0007 (`source_type='gateway'`, status `privacy_blocked`),
+`ingest/gateway_source.py` (poarta ÎNAINTEA conductei; idempotență prin
+source_ref derivat din chat+sesiune+text), `POST /api/ingest/gateway`
+(409 cât timp `INGEST_ENABLED=false` — conducta se deschide prin decizie,
+nu prin default). Verificat pe viu în sandbox: hook → aipm → refuz de poartă
+consemnat fără conținut / accept idempotent. Extracția completă e dovedită
+cu FakeLLM; pe server cere `LLM_API_KEY` în .env-ul aipm.
 
 ### 6. Suita de evaluare a răspunsurilor
 

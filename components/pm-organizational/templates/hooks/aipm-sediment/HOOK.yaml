@@ -1,0 +1,7 @@
+name: aipm-sediment
+description: >
+  Conducta de sedimentare: fiecare mesaj primit pe gateway (cu identitatea
+  reală a expeditorului, post-allowlist) e trimis memoriei aipm prin vamă.
+  Fire-and-forget cu timeout mic — gateway-ul nu așteaptă memoria.
+events:
+  - "agent:start"

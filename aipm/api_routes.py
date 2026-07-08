@@ -41,6 +41,13 @@ class DigestRequest(BaseModel):
     mark: bool = True
 
 
+class GatewayIngest(BaseModel):
+    author_key: str
+    text: str
+    chat_id: str = ""
+    session_id: str = ""
+
+
 def _memory_row(conn, row) -> dict:
     item = dict(row) | {"id": str(row["id"])}
     for key in ("created_at", "due_at"):
@@ -315,6 +322,37 @@ def register(app: FastAPI) -> None:
                 (normalized_text, req.status),
             )
         return {"status": req.status}
+
+    @app.post("/api/ingest/gateway")
+    def ingest_gateway(req: GatewayIngest):
+        """Conducta de sedimentare (etapele 3+5): chemată de hook-ul aipm-sediment.
+
+        Poarta de intimitate se aplică SINCRON (refuzul e vizibil în răspuns);
+        extracția rulează async — hook-ul nu ține gateway-ul pe loc. Conducta
+        e închisă cât timp INGEST_ENABLED=false (deschiderea = decizie, P4)."""
+        from .engine import privacy
+        from .ingest.gateway_source import (
+            ingest_gateway_async, ingest_gateway_message, source_ref_for,
+        )
+
+        if not config.INGEST_ENABLED:
+            raise HTTPException(409, "conducta de sedimentare e închisă (INGEST_ENABLED=false)")
+        if not req.text.strip():
+            return {"status": "empty"}
+
+        if privacy.blocked_terms(req.text):
+            # consemnarea refuzului (fără conținut) se face în calea sincronă
+            return ingest_gateway_message(
+                req.author_key, req.text, req.chat_id, req.session_id
+            )
+
+        threading.Thread(
+            target=ingest_gateway_async,
+            args=(req.author_key, req.text, req.chat_id, req.session_id),
+            daemon=True,
+        ).start()
+        return {"status": "accepted",
+                "source_ref": source_ref_for(req.chat_id, req.session_id, req.text)}
 
     @app.post("/api/ingest/run")
     def ingest_run():
