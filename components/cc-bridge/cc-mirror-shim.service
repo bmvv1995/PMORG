@@ -1,0 +1,19 @@
+[Unit]
+Description=cc-mirror shim — OpenAI-compatible adapter routing Hermes to Claude Code
+Documentation=file:///home/vscode/.hermes/skills/autonomous-ai-agents/cc-bridge/SKILL.md
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/vscode/.local/bin/cc-mirror-shim
+Restart=on-failure
+RestartSec=3
+# tmux + cc-bridge trebuie găsite; tmux socket e per-UID, deci sesiunile pornite
+# de aici sunt aceleași cu cele văzute din shell (tmux ls).
+Environment=PATH=/home/vscode/.local/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/home/vscode
+StandardOutput=append:/home/vscode/.cc-bridge/shim.log
+StandardError=append:/home/vscode/.cc-bridge/shim.log
+
+[Install]
+WantedBy=default.target

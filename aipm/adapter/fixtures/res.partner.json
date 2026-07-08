@@ -1,0 +1,8 @@
+[
+  {"id": 201, "name": "Narcoffee Roasters SRL", "email": "office@narcoffee.ro", "ref": "NARC", "city": "Chișinău", "is_company": true, "supplier_rank": 3, "customer_rank": 0, "active": true},
+  {"id": 202, "name": "Ion Georgescu", "email": "ion.georgescu@evrika.team", "ref": false, "city": "Chișinău", "is_company": false, "supplier_rank": 0, "customer_rank": 0, "active": true},
+  {"id": 203, "name": "Ion Georgescu", "email": "ion.g@decordesign.ro", "ref": false, "city": "București", "is_company": false, "supplier_rank": 0, "customer_rank": 1, "active": true},
+  {"id": 204, "name": "Decor & Design SRL", "email": "contact@decordesign.ro", "ref": "DECOR", "city": "București", "is_company": true, "supplier_rank": 1, "customer_rank": 0, "active": true},
+  {"id": 205, "name": "AIPM Service", "email": "aipm@evrika.team", "ref": false, "city": false, "is_company": false, "supplier_rank": 0, "customer_rank": 0, "active": true},
+  {"id": 206, "name": "Furnizor Vechi Lichidat SRL", "email": false, "ref": "FVL", "city": "Bălți", "is_company": true, "supplier_rank": 2, "customer_rank": 0, "active": false}
+]

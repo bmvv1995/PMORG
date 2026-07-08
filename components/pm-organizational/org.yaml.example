@@ -1,0 +1,28 @@
+# Identitatea clientului — datele pe care le colectează chestionarul de
+# aliniere (hermes-ontology/templates/chestionar-aliniere.md). Acest fișier
+# NU e citit de instalator (secretele intră prin wizard); e harta a ceea ce
+# trebuie să existe pentru ca PM-ul să poată porni organizația.
+
+owner:
+  nume: ""
+  telegram_id: 0          # numeric; intră în TELEGRAM_ALLOWED_USERS
+  ritm_raport: zilnic     # zilnic | saptamanal
+  canal_raport: telegram
+
+bot:
+  nume: ""                # @...bot, creat la @BotFather de owner
+
+proiecte:
+  - slug: ""              # kebab-case; devine board kanban + numele memoriei
+    nume: ""
+    ontologie_domeniu: "" # unde e definit domeniul (modul, documentație)
+
+organigrama:              # harta de rutare — cine execută, cine aprobă
+  - nume: ""
+    rol: ""
+    telegram_id: 0        # onboarding: Start pe bot → allowlist → aici
+    escaladare_catre: ""  # către cine urcă problemele lui
+
+constrangeri:
+  niciodata_la_llm: []    # ex.: salarii, date medicale, HR disciplinar
+  buget_lunar_api_usd: 0  # plafonul de metering

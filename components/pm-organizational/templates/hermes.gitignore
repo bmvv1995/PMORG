@@ -1,0 +1,39 @@
+# secrete — NU intră în istorie
+.env
+*/.env
+**/.env
+auth.json
+**/auth.json
+pairing/
+**/pairing/
+# runtime / date (backup separat, nu versionare)
+*.db
+*.db-*
+*.lock
+logs/
+**/logs/
+sessions/
+**/sessions/
+processes.json
+interrupt_debug.log
+# cache-uri și artefacte
+*cache*/
+**/*cache*
+*_cache.json
+*_cache.yaml
+pastes/
+sandboxes/
+workspace/
+**/workspace/
+home/
+**/home/
+audio_cache/
+image_cache/
+# instalări (au propriile repo-uri / se reinstalează)
+hermes-agent/
+node/
+bin/
+plugins/
+kanban/
+shared/
+**/nous_auth.json

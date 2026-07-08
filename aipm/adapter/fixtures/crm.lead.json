@@ -1,0 +1,4 @@
+[
+  {"id": 601, "name": "Catering nuntă septembrie", "partner_name": "Familia Rusu", "expected_revenue": 15000, "active": true},
+  {"id": 602, "name": "Livrare cafea birouri IT Park", "partner_name": "TechHub SRL", "expected_revenue": 4200, "active": true}
+]

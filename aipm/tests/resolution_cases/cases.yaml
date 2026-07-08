@@ -1,0 +1,174 @@
+# Suita de rezoluție — nucleul de credibilitate (plan §D).
+# Rulează pe FakeOdooAdapter + LLM REAL (@pytest.mark.llm). Poarta: 100% must, ≥85% total.
+# REGULĂ PERMANENTĂ: orice rezoluție greșită pe instanța reală devine caz nou aici.
+#
+# outcome: accept (ancoră, needs_review=false) | review (ancoră, needs_review=true)
+#          | none (candidați există, scor sub prag) | external (zero candidați Odoo)
+
+- id: R-001
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "PO00012", normalized: "PO00012", hint: PURCHASE_ORDER}
+  expect: {outcome: accept, anchor: PURCHASE_ORDER, res_id: 401}
+
+- id: R-002
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "comanda PO00013 de la decor", normalized: "PO00013", hint: PURCHASE_ORDER}
+  expect: {outcome: accept, anchor: PURCHASE_ORDER, res_id: 402}
+
+- id: R-003
+  severity: must
+  kind: observation
+  entity: {role: mentions, mention: "cei de la Narcoffee", normalized: "Narcoffee", hint: PARTNER}
+  expect: {outcome: accept, anchor: PARTNER, res_id: 201}
+
+- id: R-004
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "Narcoffee Roasters", normalized: "Narcoffee Roasters", hint: null}
+  expect: {outcome: accept, anchor: PARTNER, res_id: 201}
+
+- id: R-005
+  severity: must
+  kind: observation
+  entity: {role: mentions, mention: "primăria", normalized: "Primăria Chișinău", hint: null}
+  expect: {outcome: external}
+
+- id: R-006
+  severity: must
+  kind: decision
+  entity: {role: subject, mention: "proiectul de terasă", normalized: "Amenajare Terasă Vară", hint: PROJECT}
+  expect: {outcome: accept, anchor: PROJECT, res_id: 11}
+
+- id: R-007
+  severity: must
+  kind: decision
+  entity: {role: subject, mention: "taskul de montaj mobilier pe terasă", normalized: "Montaj mobilier terasă", hint: TASK}
+  expect: {outcome: accept, anchor: TASK, res_id: 101}
+
+- id: R-008
+  severity: should
+  kind: decision
+  entity: {role: subject, mention: "montajul de mobilier", normalized: "Montaj mobilier", hint: TASK}
+  expect: {outcome: review}   # omonime: 101 vs 102 — fără context, sub accept
+
+- id: R-009
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "configurarea imprimantelor fiscale", normalized: "Configurare imprimante fiscale", hint: TASK}
+  expect: {outcome: accept, anchor: TASK, res_id: 103}
+
+- id: R-010
+  severity: must
+  kind: observation
+  entity: {role: mentions, mention: "Elena Radu", normalized: "Elena Radu", hint: EMPLOYEE}
+  expect: {outcome: accept, anchor: EMPLOYEE, res_id: 301}
+
+- id: R-011
+  severity: must
+  kind: observation
+  entity: {role: mentions, mention: "Dan Popescu de la management", normalized: "Dan Popescu", hint: EMPLOYEE}
+  expect: {outcome: accept, anchor: EMPLOYEE, res_id: 302}
+
+- id: R-012
+  severity: should
+  kind: commitment
+  entity: {role: owner, mention: "Ion Georgescu", normalized: "Ion Georgescu", hint: null}
+  expect: {outcome: review}   # omonim triplu (2 parteneri + 1 angajat) — trebuie să ceară verificare
+
+- id: R-013
+  severity: must
+  kind: commitment
+  entity: {role: owner, mention: "Ion, tehnicianul nostru de montaj", normalized: "Ion Georgescu", hint: EMPLOYEE}
+  expect: {outcome: accept, anchor: EMPLOYEE, res_id: 303}
+
+- id: R-014
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "cafeaua boabe de 1kg", normalized: "Cafea espresso boabe 1kg", hint: PRODUCT}
+  expect: {outcome: accept, anchor: PRODUCT, res_id: 701}
+
+- id: R-015
+  severity: should
+  kind: observation
+  entity: {role: subject, mention: "cafeaua espresso", normalized: "Cafea espresso", hint: PRODUCT}
+  expect: {outcome: review}   # boabe vs măcinată — ambiguu
+
+- id: R-016
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "produsul cu codul CAF-002", normalized: "CAF-002", hint: PRODUCT}
+  expect: {outcome: accept, anchor: PRODUCT, res_id: 702}   # ramura resolution_fields (default_code)
+
+- id: R-017
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "oportunitatea de catering pentru nuntă", normalized: "Catering nuntă septembrie", hint: LEAD}
+  expect: {outcome: accept, anchor: LEAD, res_id: 601}
+
+- id: R-018
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "comanda de vânzare S00042", normalized: "S00042", hint: SALE_ORDER}
+  expect: {outcome: accept, anchor: SALE_ORDER, res_id: 501}
+
+- id: R-019
+  severity: should
+  kind: decision
+  entity: {role: subject, mention: "firma noastră", normalized: "Evrika Team", hint: COMPANY}
+  expect: {outcome: accept, anchor: COMPANY, res_id: 1}   # prag 0.95 — strict intenționat
+
+- id: R-020
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "proiectul vechi de rebranding", normalized: "Rebranding Cafenea Centru", hint: PROJECT}
+  expect: {outcome: accept, anchor: PROJECT, res_id: 13}   # ARHIVAT — active_test=False (§1.6.1)
+
+- id: R-021
+  severity: must
+  kind: observation
+  entity: {role: mentions, mention: "furnizorul lichidat", normalized: "Furnizor Vechi Lichidat", hint: PARTNER}
+  expect: {outcome: accept, anchor: PARTNER, res_id: 206}   # partener arhivat
+
+- id: R-022
+  severity: must
+  kind: observation
+  entity: {role: mentions, mention: "partenerul cu referința NARC", normalized: "NARC", hint: PARTNER}
+  expect: {outcome: accept, anchor: PARTNER, res_id: 201}   # ramura resolution_fields (ref)
+
+- id: R-023
+  severity: should
+  kind: observation
+  entity: {role: mentions, mention: "firma de decor", normalized: "firma de decor", hint: null}
+  expect: {outcome: external}   # există „Decor & Design SRL", dar textul nu se potrivește — §1.7
+
+- id: R-024
+  severity: should
+  kind: observation
+  entity: {role: mentions, mention: "Decor & Design", normalized: "Decor & Design", hint: PARTNER}
+  expect: {outcome: accept, anchor: PARTNER, res_id: 204}
+
+- id: R-025
+  severity: must
+  kind: observation
+  entity: {role: subject, mention: "leadul de livrare cafea la birouri", normalized: "Livrare cafea birouri IT Park", hint: LEAD}
+  expect: {outcome: accept, anchor: LEAD, res_id: 602}
+
+- id: R-026
+  severity: should
+  kind: observation
+  entity: {role: subject, mention: "TechHub", normalized: "TechHub", hint: LEAD}
+  expect: {outcome: external}   # LEAD rezolvă doar pe name (§1.3) — partner_name nu e resolution_field
+
+- id: R-027
+  severity: must
+  kind: commitment
+  entity: {role: subject, mention: "instruirea personalului pe casa de marcat", normalized: "Instruire personal casă de marcat", hint: TASK}
+  expect: {outcome: accept, anchor: TASK, res_id: 104}
+
+- id: R-028
+  severity: should
+  kind: observation
+  entity: {role: subject, mention: "taskul de demontare a copertinei", normalized: "Demontare copertină veche", hint: TASK}
+  expect: {outcome: accept, anchor: TASK, res_id: 105}   # task arhivat

@@ -1,0 +1,4 @@
+[
+  {"id": 401, "name": "PO00012", "partner_ref": "NC-2026-07", "partner_id": [201, "Narcoffee Roasters SRL"], "date_order": "2026-07-01", "state": "purchase", "active": true},
+  {"id": 402, "name": "PO00013", "partner_ref": false, "partner_id": [204, "Decor & Design SRL"], "date_order": "2026-07-05", "state": "draft", "active": true}
+]

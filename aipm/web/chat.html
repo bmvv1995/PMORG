@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI-PM — Conversație</title>
+  <link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+  <header>
+    <h1>AI-PM</h1>
+    <nav>
+      <a href="/">Conversație</a>
+      <a href="/review">Verificare</a>
+      <a href="/reports">Rapoarte</a>
+    </nav>
+  </header>
+  <main id="thread" aria-live="polite"></main>
+  <form class="composer" id="composer" autocomplete="off">
+    <input id="input" placeholder="Întreabă sau consemnează ceva…" required>
+    <button type="submit" id="send">Trimite</button>
+  </form>
+  <script src="/web/chat.js"></script>
+</body>
+</html>

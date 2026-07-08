@@ -1,0 +1,49 @@
+{
+  "enableAllProjectMcpServers": true,
+  "permissions": {
+    "allow": [
+      "mcp__hermes-ops"
+    ],
+    "deny": [
+      "Bash",
+      "Write",
+      "Edit",
+      "NotebookEdit",
+      "WebFetch",
+      "WebSearch",
+      "Task"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '. + {hook_ts: (now|tostring)}' >> /home/vscode/.cc-bridge/pm/events.jsonl"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '. + {hook_ts: (now|tostring)}' >> /home/vscode/.cc-bridge/pm/events.jsonl"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '. + {hook_ts: (now|tostring)}' >> /home/vscode/.cc-bridge/pm/events.jsonl"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,597 @@
+#!/usr/bin/env python3
+"""cc-bridge — punte între o sesiune Claude Code (tmux) și un agent administrator (Hermes).
+
+Arhitectură validată empiric (2026-07-03):
+  CITIRE conținut : transcript JSONL (~/.claude/projects/<proj>/<session>.jsonl)
+  CITIRE stare    : hooks CC (UserPromptSubmit / Stop / Notification) -> events.jsonl
+  SCRIERE         : tmux load-buffer + paste-buffer + Enter
+  CRASH           : liveness pe sesiunea tmux + procesul claude
+
+Starea NU se ghicește din timing sau scraping ANSI — e derivată din ultimul
+eveniment semnificativ din events.jsonl. Bridge-ul își jurnalizează propriile
+acțiuni (BridgeSend/BridgeApprove) în același log, ca ordinea să fie completă.
+"""
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+STATE_ROOT = os.path.expanduser("~/.cc-bridge")
+
+
+def sdir(name):
+    return os.path.join(STATE_ROOT, name)
+
+
+def events_path(name):
+    return os.path.join(sdir(name), "events.jsonl")
+
+
+def meta_path(name):
+    return os.path.join(sdir(name), "meta.json")
+
+
+def tmux_target(name):
+    return f"cc-{name}"
+
+
+def tmux(*args, check=True, capture=True):
+    r = subprocess.run(["tmux", *args], capture_output=capture, text=True)
+    if check and r.returncode != 0:
+        raise RuntimeError(f"tmux {' '.join(args)}: {r.stderr.strip()}")
+    return r
+
+
+def tmux_alive(name):
+    return subprocess.run(
+        ["tmux", "has-session", "-t", tmux_target(name)], capture_output=True
+    ).returncode == 0
+
+
+def read_events(name):
+    out = []
+    try:
+        with open(events_path(name)) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass  # linie parțială — o prindem la următoarea citire
+    except FileNotFoundError:
+        pass
+    return out
+
+
+def journal(name, kind, **extra):
+    """Bridge-ul își scrie propriile acțiuni în același events.jsonl."""
+    rec = {"hook_event_name": kind, "hook_ts": str(time.time()), **extra}
+    with open(events_path(name), "a") as f:
+        f.write(json.dumps(rec) + "\n")
+
+
+SIGNIFICANT = {
+    "UserPromptSubmit": "WORKING",
+    "BridgeSend": "WORKING",
+    "BridgeApprove": "WORKING",
+    "BridgeDeny": "IDLE",   # Esc -> CC revine la promptul de input
+    "Stop": "IDLE",
+}
+
+
+def classify(ev):
+    kind = ev.get("hook_event_name")
+    if kind == "Notification":
+        nt = ev.get("notification_type")
+        if nt == "permission_prompt":
+            return "AWAITING_APPROVAL"
+        if nt == "idle_prompt":
+            return "IDLE"
+        return None  # alte notificări nu schimbă starea
+    return SIGNIFICANT.get(kind)
+
+
+def compute_state(name):
+    if not os.path.isdir(sdir(name)):
+        return "UNKNOWN", None
+    if not tmux_alive(name):
+        return "STOPPED", None
+    evs = read_events(name)
+    last_state, last_ev = "STARTING", None
+    for ev in evs:
+        st = classify(ev)
+        if st:
+            last_state, last_ev = st, ev
+    return last_state, last_ev
+
+
+def transcript_path(name):
+    """Hook-urile trimit transcript_path în payload — sursa canonică."""
+    for ev in reversed(read_events(name)):
+        p = ev.get("transcript_path")
+        if p and os.path.exists(p):
+            return p
+    return None
+
+
+def hook_settings(name):
+    cmd = (
+        "jq -c '. + {hook_ts: (now|tostring)}' >> "
+        + events_path(name).replace("'", "'\\''")
+    )
+    hook = [{"hooks": [{"type": "command", "command": cmd}]}]
+    return {"UserPromptSubmit": hook, "Stop": hook, "Notification": hook}
+
+
+# ---------------------------------------------------------------- commands
+
+def cmd_start(args):
+    name, workdir = args.name, os.path.abspath(os.path.expanduser(args.workdir))
+    os.makedirs(sdir(name), exist_ok=True)
+    os.makedirs(workdir, exist_ok=True)
+    # merge hooks în settings-ul proiectului, fără să stric ce există
+    settings_file = os.path.join(workdir, ".claude", "settings.json")
+    os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+    settings = {}
+    if os.path.exists(settings_file):
+        with open(settings_file) as f:
+            settings = json.load(f)
+    settings.setdefault("hooks", {}).update(hook_settings(name))
+    with open(settings_file, "w") as f:
+        json.dump(settings, f, indent=2)
+
+    with open(meta_path(name), "w") as f:
+        json.dump({"workdir": workdir, "created": time.time(),
+                   "model": args.model,
+                   "permission_mode": args.permission_mode}, f)
+
+    if tmux_alive(name):
+        print(f"sesiunea tmux {tmux_target(name)} există deja")
+        return 1
+    claude_cmd = "claude" + (f" --model {args.model}" if args.model else "")
+    if args.permission_mode:
+        claude_cmd += f" --permission-mode {args.permission_mode}"
+    # continuitate: dacă workdir-ul are deja conversații, reia-o pe ultima —
+    # sesiunea rămâne "veșnic legată" peste restarturi/reboot (memoria de
+    # lucru nu se pierde). Fără istorie, pornește curat.
+    import glob as _glob
+    _proj = os.path.expanduser("~/.claude/projects/" + workdir.replace("/", "-"))
+    if _glob.glob(os.path.join(_proj, "*.jsonl")):
+        claude_cmd += " --continue"
+    tmux("new-session", "-d", "-s", tmux_target(name),
+         "-x", "220", "-y", "50", "-c", workdir, claude_cmd)
+
+    # așteaptă ready; acceptă trust dialog dacă apare (workdir ales deliberat)
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        pane = tmux("capture-pane", "-t", tmux_target(name), "-p").stdout
+        if "trust this folder" in pane:
+            tmux("send-keys", "-t", tmux_target(name), "Enter")
+            time.sleep(2)
+            continue
+        if "❯" in pane:  # ❯ input box randat
+            print(f"pornit: {tmux_target(name)} în {workdir}")
+            return 0
+        time.sleep(1)
+    print("timeout așteptând promptul CC — verifică manual cu: "
+          f"tmux attach -t {tmux_target(name)}")
+    return 1
+
+
+def cmd_status(args):
+    state, ev = compute_state(args.name)
+    out = {"name": args.name, "state": state, "tmux": tmux_alive(args.name)}
+    if ev:
+        out["last_event"] = {k: ev.get(k) for k in
+                             ("hook_event_name", "notification_type",
+                              "message", "hook_ts", "prompt_id") if k in ev}
+    if state == "IDLE":
+        for e in reversed(read_events(args.name)):
+            if e.get("hook_event_name") == "Stop":
+                out["last_assistant_message"] = e.get("last_assistant_message")
+                break
+    if state == "AWAITING_APPROVAL":
+        tool = pending_details(args.name)
+        if tool:
+            out["pending_tool"] = tool.get("name")
+            if tool.get("plan"):
+                out["plan"] = tool["plan"]
+            if tool.get("question"):
+                out["question"] = tool["question"]
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0
+
+
+def inject(name, text):
+    """FR-3.3: load-buffer + paste-buffer, nu send-keys cu text brut."""
+    subprocess.run(["tmux", "load-buffer", "-b", "ccbridge", "-"],
+                   input=text, text=True, check=True)
+    tmux("paste-buffer", "-b", "ccbridge", "-t", tmux_target(name), "-d")
+    time.sleep(0.3)
+    tmux("send-keys", "-t", tmux_target(name), "Enter")
+
+
+def wait_outcome(name, since_count, timeout):
+    """Așteaptă primul Stop sau permission_prompt după marcajul dat."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        evs = read_events(name)
+        for ev in evs[since_count:]:
+            kind = ev.get("hook_event_name")
+            if kind == "Stop":
+                return "IDLE", ev
+            if (kind == "Notification"
+                    and ev.get("notification_type") == "permission_prompt"):
+                return "AWAITING_APPROVAL", ev
+        time.sleep(0.5)
+    return "TIMEOUT", None
+
+
+def screen_question(name):
+    """Extrage o AskUserQuestion din ECRANUL tmux (sursa fiabilă la momentul
+    promptului — tool_use-ul nu e încă în transcript, ca la ExitPlanMode).
+
+    Semnătura ecranului: opțiuni numerotate + 'Enter to select' + '↑/↓'.
+    Formatul liniilor:
+        ❯ 1. LABEL
+             descriere (indentată)
+    """
+    try:
+        pane = tmux("capture-pane", "-t", tmux_target(name), "-p").stdout
+    except RuntimeError:
+        return None
+    lines = pane.splitlines()
+    if not any("Enter to select" in ln or "to navigate" in ln for ln in lines):
+        return None
+    opt_re = re.compile(r"^\s*❯?\s*(\d+)\.\s+(.+?)\s*$")
+    options, header, qtext = [], None, None
+    # antet: linie cu ☐/◻/☑ ; întrebarea: prima linie ne-goală după antet
+    seen_menu = False
+    for i, ln in enumerate(lines):
+        m = opt_re.match(ln)
+        if m:
+            seen_menu = True
+            label = m.group(2).strip()
+            options.append({"num": int(m.group(1)), "label": label})
+        elif not seen_menu:
+            s = ln.strip()
+            if s and s[0] in "☐◻☑◼▪":
+                header = s[1:].strip()
+            elif s and not s.startswith("─") and "Planning:" not in s:
+                qtext = s  # ultima linie de text înainte de meniu = întrebarea
+    if not options:
+        return None
+    # elimin opțiunile auto ale CC (free-text / chat) din ce arătăm
+    real = [o for o in options
+            if o["label"].lower() not in ("type something.", "type something",
+                                          "chat about this")]
+    return {"name": "AskUserQuestion", "question": {
+        "text": qtext, "header": header,
+        "options": [{"label": o["label"], "description": None} for o in real],
+        "multi": False}}
+
+
+def pending_details(name):
+    """Detaliile aprobării curente: plan (din fișier) și/sau întrebare (din ecran).
+
+    Sursele fiabile la momentul promptului sunt fișierul de plan și ecranul
+    tmux — NU transcriptul (unde tool_use-ul încă n-a aterizat). pending_tool()
+    rămâne pentru numele tool-ului și planul.
+    """
+    tool = pending_tool(name) or {}
+    sq = screen_question(name)
+    out = {}
+    if sq:
+        out["name"] = "AskUserQuestion"
+        out["question"] = sq["question"]
+    elif tool.get("name"):
+        out["name"] = tool["name"]
+    if tool.get("plan"):
+        out["plan"] = tool["plan"]
+    if tool.get("question") and "question" not in out:
+        out["question"] = tool["question"]
+    return out or None
+
+
+def pending_tool(name):
+    """La AWAITING_APPROVAL: ce tool așteaptă aprobare + planul, dacă e plan mode.
+
+    Planul CC e scris canonic în ~/.claude/plans/<slug>.md (mai fiabil decât
+    ExitPlanMode.input, care în unele versiuni nici nu ajunge în transcript
+    până la aprobare). Prindem ultimul Write către acel folder și, dacă e
+    proaspăt, îl considerăm planul curent. Fallback: ExitPlanMode.input.plan.
+    """
+    tp = transcript_path(name)
+    if not tp:
+        return None
+    last_tool, plan_file, plan_inline = None, None, None
+    with open(tp) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if d.get("type") != "assistant":
+                continue
+            for block in d.get("message", {}).get("content") or []:
+                if not (isinstance(block, dict) and block.get("type") == "tool_use"):
+                    continue
+                inp = block.get("input", {})
+                last_tool = {"name": block.get("name"), "input": inp}
+                fp = inp.get("file_path", "")
+                if "/.claude/plans/" in fp or "/plans/" in fp and fp.endswith(".md"):
+                    plan_file = fp
+                if block.get("name") == "ExitPlanMode":
+                    plan_inline = inp.get("plan")
+    if not last_tool:
+        return None
+    plan = plan_inline
+    if plan_file and os.path.exists(plan_file):
+        try:
+            plan = open(plan_file).read()
+        except OSError:
+            pass
+    if plan:
+        last_tool["plan"] = plan
+    if last_tool.get("name") == "AskUserQuestion":
+        qs = last_tool.get("input", {}).get("questions") or []
+        if qs:
+            q = qs[0]  # TUI prezintă o întrebare pe rând; o tratăm pe prima
+            last_tool["question"] = {
+                "text": q.get("question"),
+                "header": q.get("header"),
+                "options": [{"label": o.get("label"),
+                             "description": o.get("description")}
+                            for o in q.get("options") or []],
+                "multi": bool(q.get("multiSelect")),
+            }
+    return last_tool
+
+
+def cmd_send(args):
+    state, _ = compute_state(args.name)
+    if state == "STOPPED":
+        print(json.dumps({"error": "sesiunea tmux nu rulează"}))
+        return 1
+    if state in ("WORKING", "AWAITING_APPROVAL") and not args.force:
+        print(json.dumps({"error": f"CC este {state}; folosește --force ca să "
+                          "trimiți oricum (mesajul intră în coadă)"}))
+        return 1
+    text = args.text if args.text is not None else sys.stdin.read()
+    n_before = len(read_events(args.name))
+    inject(args.name, text)
+    journal(args.name, "BridgeSend", text=text[:200])
+    if not args.wait:
+        print(json.dumps({"sent": True}))
+        return 0
+    outcome, ev = wait_outcome(args.name, n_before, args.timeout)
+    res = {"sent": True, "outcome": outcome}
+    if outcome == "IDLE" and ev:
+        res["reply"] = ev.get("last_assistant_message")
+    if outcome == "AWAITING_APPROVAL" and ev:
+        res["permission_request"] = ev.get("message")
+        tool = pending_details(args.name)
+        if tool:
+            res["pending_tool"] = tool.get("name")
+            if tool.get("plan"):
+                res["plan"] = tool["plan"]
+            if tool.get("question"):
+                res["question"] = tool["question"]
+    print(json.dumps(res, ensure_ascii=False, indent=2))
+    return 0 if outcome == "IDLE" else 2
+
+
+def cmd_approve(args):
+    state, _ = compute_state(args.name)
+    if state != "AWAITING_APPROVAL" and not args.force:
+        print(json.dumps({"error": f"starea e {state}, nu AWAITING_APPROVAL"}))
+        return 1
+    n_before = len(read_events(args.name))
+    key = str(args.option) if args.option else "Enter"
+    tmux("send-keys", "-t", tmux_target(args.name), key)
+    journal(args.name, "BridgeApprove", option=args.option or "default")
+    if args.wait:
+        outcome, ev = wait_outcome(args.name, n_before, args.timeout)
+        res = {"approved": True, "outcome": outcome}
+        if outcome == "IDLE" and ev:
+            res["reply"] = ev.get("last_assistant_message")
+        if outcome == "AWAITING_APPROVAL" and ev:
+            res["permission_request"] = ev.get("message")
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return 0 if outcome == "IDLE" else 2
+    print(json.dumps({"approved": True}))
+    return 0
+
+
+def cmd_answer(args):
+    """Răspunde la o AskUserQuestion selectând opțiunea N (1-indexat).
+
+    Navigație deterministă: de la opțiunea 1 (evidențiată implicit) coborâm
+    N-1 poziții cu Down, apoi Enter. Fără digit-keys (care în unele meniuri
+    auto-confirmă și riscă dublă acțiune).
+    """
+    tool = pending_details(args.name)
+    if not tool or not tool.get("question"):
+        if not args.force:
+            print(json.dumps({"error": "nu e nicio întrebare AskUserQuestion "
+                              "activă (folosește --force ca să forțezi)"}))
+            return 1
+    n = args.choice
+    n_before = len(read_events(args.name))
+    for _ in range(max(0, n - 1)):
+        tmux("send-keys", "-t", tmux_target(args.name), "Down")
+        time.sleep(0.15)
+    tmux("send-keys", "-t", tmux_target(args.name), "Enter")
+    journal(args.name, "BridgeAnswer", choice=n)
+    if args.wait:
+        outcome, ev = wait_outcome(args.name, n_before, args.timeout)
+        res = {"answered": n, "outcome": outcome}
+        if outcome == "IDLE" and ev:
+            res["reply"] = ev.get("last_assistant_message")
+        tool2 = pending_details(args.name) if outcome == "AWAITING_APPROVAL" else None
+        if tool2 and tool2.get("plan"):
+            res["plan"] = tool2["plan"]
+        if tool2 and tool2.get("question"):
+            res["question"] = tool2["question"]
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return 0 if outcome == "IDLE" else 2
+    print(json.dumps({"answered": n}))
+    return 0
+
+
+def cmd_deny(args):
+    tmux("send-keys", "-t", tmux_target(args.name), "Escape")
+    journal(args.name, "BridgeDeny")
+    print(json.dumps({"denied": True}))
+    return 0
+
+
+def extract_text(content):
+    if isinstance(content, str):
+        return content
+    parts = []
+    for block in content or []:
+        if isinstance(block, dict):
+            if block.get("type") == "text":
+                parts.append(block.get("text", ""))
+            elif block.get("type") == "tool_use":
+                parts.append(f"[tool: {block.get('name')}]")
+    return "\n".join(p for p in parts if p)
+
+
+def cmd_tail(args):
+    tp = transcript_path(args.name)
+    if not tp:
+        print(json.dumps({"error": "niciun transcript cunoscut încă "
+                          "(niciun hook nu a raportat transcript_path)"}))
+        return 1
+    msgs = []
+    with open(tp) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if d.get("type") not in ("user", "assistant") or d.get("isMeta"):
+                continue
+            content = d.get("message", {}).get("content")
+            # sar peste tool_results (user sintetic)
+            if (isinstance(content, list) and content
+                    and isinstance(content[0], dict)
+                    and content[0].get("type") == "tool_result"):
+                continue
+            text = extract_text(content)
+            if text:
+                msgs.append({"role": d["message"]["role"], "text": text,
+                             "ts": d.get("timestamp")})
+    for m in msgs[-args.n:]:
+        print(json.dumps(m, ensure_ascii=False))
+    return 0
+
+
+def cmd_events(args):
+    for ev in read_events(args.name)[-args.n:]:
+        print(json.dumps(ev, ensure_ascii=False))
+    return 0
+
+
+def cmd_stop(args):
+    if tmux_alive(args.name):
+        tmux("kill-session", "-t", tmux_target(args.name))
+        print(json.dumps({"stopped": True}))
+    else:
+        print(json.dumps({"stopped": False, "reason": "nu rula"}))
+    return 0
+
+
+def cmd_list(args):
+    if not os.path.isdir(STATE_ROOT):
+        return 0
+    for name in sorted(os.listdir(STATE_ROOT)):
+        if os.path.isdir(sdir(name)):
+            state, _ = compute_state(name)
+            print(json.dumps({"name": name, "state": state}))
+    return 0
+
+
+def main():
+    p = argparse.ArgumentParser(prog="cc-bridge", description=__doc__)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("start", help="pornește o sesiune CC în tmux cu hooks")
+    s.add_argument("name")
+    s.add_argument("--workdir", required=True)
+    s.add_argument("--model", default=None)
+    s.add_argument("--permission-mode", default=None,
+                   help="plan | default | acceptEdits | bypassPermissions")
+    s.set_defaults(fn=cmd_start)
+
+    s = sub.add_parser("status", help="starea curentă (din evenimente hook)")
+    s.add_argument("name")
+    s.set_defaults(fn=cmd_status)
+
+    s = sub.add_parser("send", help="trimite un mesaj în sesiunea CC")
+    s.add_argument("name")
+    s.add_argument("text", nargs="?", default=None,
+                   help="textul; dacă lipsește, se citește de la stdin")
+    s.add_argument("--wait", action="store_true",
+                   help="așteaptă Stop sau permission_prompt")
+    s.add_argument("--timeout", type=int, default=300)
+    s.add_argument("--force", action="store_true")
+    s.set_defaults(fn=cmd_send)
+
+    s = sub.add_parser("approve", help="aprobă dialogul de permisiune curent")
+    s.add_argument("name")
+    s.add_argument("--option", type=int, default=None,
+                   help="numărul opțiunii (implicit: Enter = opțiunea marcată)")
+    s.add_argument("--wait", action="store_true")
+    s.add_argument("--timeout", type=int, default=300)
+    s.add_argument("--force", action="store_true")
+    s.set_defaults(fn=cmd_approve)
+
+    s = sub.add_parser("answer", help="răspunde la o AskUserQuestion (opțiunea N)")
+    s.add_argument("name")
+    s.add_argument("choice", type=int, help="numărul opțiunii (1-indexat)")
+    s.add_argument("--wait", action="store_true")
+    s.add_argument("--timeout", type=int, default=300)
+    s.add_argument("--force", action="store_true")
+    s.set_defaults(fn=cmd_answer)
+
+    s = sub.add_parser("deny", help="respinge dialogul curent (Esc)")
+    s.add_argument("name")
+    s.set_defaults(fn=cmd_deny)
+
+    s = sub.add_parser("tail", help="ultimele mesaje din transcript (curat)")
+    s.add_argument("name")
+    s.add_argument("-n", type=int, default=10)
+    s.set_defaults(fn=cmd_tail)
+
+    s = sub.add_parser("events", help="evenimentele hook brute")
+    s.add_argument("name")
+    s.add_argument("-n", type=int, default=20)
+    s.set_defaults(fn=cmd_events)
+
+    s = sub.add_parser("stop", help="oprește sesiunea tmux")
+    s.add_argument("name")
+    s.set_defaults(fn=cmd_stop)
+
+    s = sub.add_parser("list", help="toate sesiunile bridge")
+    s.set_defaults(fn=cmd_list)
+
+    args = p.parse_args()
+    sys.exit(args.fn(args))
+
+
+if __name__ == "__main__":
+    main()

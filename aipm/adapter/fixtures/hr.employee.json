@@ -1,0 +1,5 @@
+[
+  {"id": 301, "name": "Elena Radu", "work_email": "elena.radu@evrika.team", "job_title": "Manager operațiuni", "department_id": [31, "Operațiuni"], "active": true},
+  {"id": 302, "name": "Dan Popescu", "work_email": "dan.popescu@evrika.team", "job_title": "Manager proiect", "department_id": [32, "Management"], "active": true},
+  {"id": 303, "name": "Ion Georgescu", "work_email": "ion.georgescu@evrika.team", "job_title": "Tehnician montaj", "department_id": [31, "Operațiuni"], "active": true}
+]

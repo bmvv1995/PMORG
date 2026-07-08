@@ -1,0 +1,5 @@
+[
+  {"id": 11, "name": "Amenajare Terasă Vară", "user_id": [302, "Dan Popescu"], "active": true},
+  {"id": 12, "name": "Implementare POS Horeca", "user_id": [301, "Elena Radu"], "active": true},
+  {"id": 13, "name": "Rebranding Cafenea Centru", "user_id": [302, "Dan Popescu"], "active": false}
+]

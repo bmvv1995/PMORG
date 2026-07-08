@@ -1,0 +1,5 @@
+[
+  {"id": 701, "name": "Cafea espresso boabe 1kg", "default_code": "CAF-001", "categ_id": [71, "Cafea"], "list_price": 250.0, "active": true},
+  {"id": 702, "name": "Cafea espresso măcinată 1kg", "default_code": "CAF-002", "categ_id": [71, "Cafea"], "list_price": 240.0, "active": true},
+  {"id": 703, "name": "Sirop caramel 0.7l", "default_code": "SIR-014", "categ_id": [72, "Siropuri"], "list_price": 95.0, "active": true}
+]

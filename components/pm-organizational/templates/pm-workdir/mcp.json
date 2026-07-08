@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "hermes-ops": {
+      "command": "/usr/bin/python3",
+      "args": [
+        "__HOME__/hermes-ops-mcp/server.py"
+      ],
+      "env": {
+        "HERMES_OPS_AUTHOR": "pm",
+        "HERMES_BIN": "__HOME__/.local/bin/pm"
+      }
+    }
+  }
+}

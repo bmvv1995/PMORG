@@ -1,0 +1,7 @@
+[
+  {"id": 101, "name": "Montaj mobilier terasă", "project_id": [11, "Amenajare Terasă Vară"], "user_ids": [202], "date_deadline": "2026-07-11", "active": true},
+  {"id": 102, "name": "Montaj mobilier bar interior", "project_id": [11, "Amenajare Terasă Vară"], "user_ids": [202], "date_deadline": "2026-07-25", "active": true},
+  {"id": 103, "name": "Configurare imprimante fiscale", "project_id": [12, "Implementare POS Horeca"], "user_ids": [203], "date_deadline": "2026-07-20", "active": true},
+  {"id": 104, "name": "Instruire personal casă de marcat", "project_id": [12, "Implementare POS Horeca"], "user_ids": [], "date_deadline": false, "active": true},
+  {"id": 105, "name": "Demontare copertină veche", "project_id": [11, "Amenajare Terasă Vară"], "user_ids": [202], "date_deadline": "2026-06-15", "active": false}
+]
