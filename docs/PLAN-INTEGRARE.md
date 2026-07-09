@@ -132,6 +132,15 @@ nu prin default). Verificat pe viu în sandbox: hook → aipm → refuz de poart
 consemnat fără conținut / accept idempotent. Extracția completă e dovedită
 cu FakeLLM; pe server cere `LLM_API_KEY` în .env-ul aipm.
 
+*Validat pe Telegram REAL (2026-07-09, bot de test + gateway Hermes stock
+în sandbox):* mesajul ownerului cu termen interzis („salariul", flexionat) →
+`privacy_blocked`, fără nicio urmă de conținut în jurnal; mesajul curat →
+`accepted` cu identitatea reală (`telegram:<id>` prin vamă); ultima verigă
+(fapt memorat) cere doar cheia LLM. **Constatare de produs:** Hermes grupează
+mesajele sosite în rafală într-un singur tur de agent — hook-ul primește
+textul combinat, deci un termen interzis blochează întregul lot; de documentat
+pentru owner (comportament corect al porții, dar cu granularitate de lot).
+
 ### 6. Suita de evaluare a răspunsurilor
 
 Perechea suitei de rezoluție care există deja (`tests/resolution_cases/`): cazuri
