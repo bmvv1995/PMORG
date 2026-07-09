@@ -14,6 +14,18 @@ ok()   { printf '   ✔ %s\n' "$*"; }
 warn() { printf '   ⚠ %s\n' "$*"; }
 
 say "dependențe"
+# Hermes se instalează automat (pachetul public hermes-agent) — ținta produsului:
+# o singură comandă. Restul (tmux, git, claude autentificat) rămân precondiții.
+if ! command -v hermes >/dev/null 2>&1; then
+  echo "   hermes lipsește — îl instalez din PyPI (hermes-agent)…"
+  if python3 -m pip install --user -q hermes-agent 2>/dev/null || pipx install hermes-agent 2>/dev/null; then
+    export PATH="$HOME/.local/bin:$PATH"
+    command -v hermes >/dev/null 2>&1 && ok "hermes-agent instalat" \
+      || warn "instalat, dar «hermes» nu e în PATH — adaugă ~/.local/bin în PATH"
+  else
+    warn "instalarea hermes-agent a eșuat — instalează manual: pip install hermes-agent"
+  fi
+fi
 MISSING=0
 for c in tmux python3 git claude hermes; do
   command -v "$c" >/dev/null 2>&1 && ok "$c" || { warn "LIPSĂ: $c"; MISSING=1; }
@@ -101,10 +113,13 @@ PY
   fi
 fi
 
-say "auditul determinist al board-ului"
+say "auditul determinist al board-ului + digestul memoriei"
 mkdir -p "$HOME/.hermes/scripts"
 [ -f "$HOME/.hermes/scripts/audit-board.py" ] || cp "$BASE/templates/audit-board.py" "$HOME/.hermes/scripts/"
-ok "script prezent (cron-ul zilnic se instalează după configurarea Telegram: pm cron create \"0 8 * * *\" --name audit-board --no-agent --script audit-board.py --deliver telegram)"
+[ -f "$HOME/.hermes/scripts/aipm-digest.py" ] || cp "$BASE/templates/aipm-digest.py" "$HOME/.hermes/scripts/"
+ok "scripturi prezente (cron-urile se instalează după configurarea Telegram:"
+echo "     pm cron create \"0 8 * * *\" --name audit-board --no-agent --script audit-board.py --deliver telegram"
+echo "     pm cron create \"0 8 * * *\" --name aipm-digest --no-agent --script aipm-digest.py --deliver telegram)"
 
 # memoria (aipm) — PLAN-INTEGRARE etapa 1: organul se instalează inert
 if [ "${PMORG_SKIP_AIPM:-0}" = 1 ]; then

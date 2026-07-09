@@ -89,6 +89,16 @@ function card(item, { withReceiptButton }) {
     });
     actions.appendChild(b);
   }
+  if (item.kind === "commitment" || item.kind === "open_question") {
+    // felia umană a închiderii (etapa 8, D3): omul marchează încheiat/înlocuit
+    const resolve = el("button", null, "Încheiat");
+    resolve.addEventListener("click", async () => {
+      if (!confirm("Marchezi ca încheiat/înlocuit? Iese din rapoarte și din recall.")) return;
+      try { await post(`/api/memory/${item.id}/resolve`); toast("Încheiat."); load(); }
+      catch (e) { toast(`Eroare: ${e.message}`); }
+    });
+    actions.appendChild(resolve);
+  }
   const retract = el("button", "danger", "Retractează");
   retract.addEventListener("click", async () => {
     if (!confirm("Retractezi amintirea?")) return;

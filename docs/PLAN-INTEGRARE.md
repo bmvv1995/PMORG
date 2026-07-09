@@ -150,6 +150,14 @@ model sau de prag degradează răspunsurile fără să observe nimeni.
 *Criteriu de ieșire:* suita rulează în CI pe adaptorul fake; cazurile obligatorii
 trec 100%; o regresie plantată intenționat o face roșie.
 
+*Stare: implementat 2026-07-09.* `tests/recall_cases/cases.yaml` (9 cazuri:
+selecția memoriei — retracted/resolved/scurgeri între ancore/tăcere fără
+entități — plus integritatea claims: valoare fabricată eliminată, doar-memorie
+forțat ipoteză, valoare reală forțată fapt) + `test_recall_suite.py`
+(determinist: FakeLLM + fără embeddings; poarta: 100% must + ≥85% agregat).
+Aceeași regulă permanentă ca la rezoluție: orice recall greșit pe instanța
+reală devine caz nou.
+
 ### 7. Uneltele de memorie ale PM-ului
 
 Trei unelte noi în serverul MCP (`hermes-ops-mcp`): întreabă memoria, cere un
@@ -182,8 +190,9 @@ verificare. Itemii încheiați ies din rapoarte și din răspunsuri.
 resolved_by/at), derivarea live în due_soon + commitments_missing (Odoo picat
 → nimic exclus pe orb, raport declarat `degraded`), `POST
 /api/memory/{id}/resolve` (om, 409 la re-rezolvare). Criteriul de ieșire =
-`test_commitment_closing.py`. **Rămas:** butonul „încheiat" în pagina /review
-(UI) și, opțional, extinderea derivării live în selecția recall.
+`test_commitment_closing.py`. Butonul „Încheiat" există în /review
+(2026-07-09, pe commitment/open_question). **Rămas opțional:** extinderea
+derivării live în selecția recall.
 
 ### 9. Rapoartele ajung singure pe Telegram
 

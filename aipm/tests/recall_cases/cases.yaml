@@ -1,0 +1,150 @@
+# Suita de evaluare a răspunsurilor (PLAN-INTEGRARE etapa 6) — sora suitei de rezoluție.
+# Stratul DETERMINIST (CI implicit): FakeOdooAdapter + FakeLLM scriptat, fără rețea.
+# Ce păzește: SELECȚIA memoriei (ce intră în [MEMORIE] spre narator) și INTEGRITATEA
+# claims (post-validarea mecanică I2). Poarta: 100% pe cazurile `must`, ≥85% total.
+# REGULĂ PERMANENTĂ: orice recall greșit pe instanța reală devine caz nou aici.
+#
+# Schema unui caz:
+#   seed:     itemi de memorie de sădit (title, kind, status, anchors, due_at)
+#   question: întrebarea pusă memoriei
+#   query:    răspunsul scriptat al extracției de entități din întrebare (poate lipsi = fără entități)
+#   rescore:  scorurile scriptate [idx, ANCHOR, res_id, scor] (doar dacă query are entități)
+#   narrate:  claims scriptate; $MID<n> se înlocuiește cu id-ul real al seed[n]
+#   expect:
+#     retrieved:      titluri care TREBUIE să ajungă în blocul [MEMORIE]
+#     not_retrieved:  titluri care NU au voie să ajungă
+#     claims:         empty | lista de {status} așteptată (opțional)
+
+- id: RC-001
+  severity: must
+  about: "recall structural: itemul activ ancorat la entitatea întrebată e regăsit"
+  seed:
+    - {title: "Decizie montaj mobilier terasă", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "ce știm despre montajul terasei?"
+  query: [{mention: "montaj terasă", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  expect:
+    retrieved: ["Decizie montaj mobilier terasă"]
+
+- id: RC-002
+  severity: must
+  about: "un item retractat nu mai e adus niciodată"
+  seed:
+    - {title: "Decizie activă pe task", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+    - {title: "Decizie retractată pe task", kind: decision, status: retracted,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "ce s-a decis la montaj?"
+  query: [{mention: "montaj", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  expect:
+    retrieved: ["Decizie activă pe task"]
+    not_retrieved: ["Decizie retractată pe task"]
+
+- id: RC-003
+  severity: must
+  about: "un angajament închis de om (resolved, etapa 8) iese din recall"
+  seed:
+    - {title: "Angajament încă viu", kind: commitment,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+    - {title: "Angajament încheiat de om", kind: commitment, status: resolved,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "ce angajamente avem pe montaj?"
+  query: [{mention: "montaj", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  expect:
+    retrieved: ["Angajament încă viu"]
+    not_retrieved: ["Angajament încheiat de om"]
+
+- id: RC-004
+  severity: must
+  about: "fără scurgeri între ancore: întrebarea despre un task nu aduce memoria altui task"
+  seed:
+    - {title: "Decizie pe taskul întrebat", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+    - {title: "Decizie pe alt task", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 102}]}
+  question: "ce știm despre montajul terasei?"
+  query: [{mention: "montaj terasă", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  expect:
+    retrieved: ["Decizie pe taskul întrebat"]
+    not_retrieved: ["Decizie pe alt task"]
+
+- id: RC-005
+  severity: must
+  about: "întrebare fără entități + embeddings căzute: memoria tace, nu inventează"
+  seed:
+    - {title: "Decizie fără legătură", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 102}]}
+  question: "care e sensul vieții?"
+  expect:
+    not_retrieved: ["Decizie fără legătură"]
+
+- id: RC-006
+  severity: should
+  about: "mai mulți itemi pe aceeași ancoră: toți cei activi sunt regăsiți"
+  seed:
+    - {title: "Prima decizie pe terasă", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+    - {title: "A doua decizie pe terasă", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "istoria montajului terasei?"
+  query: [{mention: "montaj terasă", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  expect:
+    retrieved: ["Prima decizie pe terasă", "A doua decizie pe terasă"]
+
+- id: RC-007
+  severity: must
+  about: "claim cu valoare Odoo fabricată → eliminat mecanic (I2)"
+  seed:
+    - {title: "Decizie montaj cu termen", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "când e termenul montajului?"
+  query: [{mention: "montaj", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  narrate:
+    claims:
+      - {text: "Termenul e mâine.", status: fact,
+         support: [{type: odoo, anchor_code: TASK, res_id: 101,
+                    field: date_deadline, value: "2099-01-01"}]}
+  expect:
+    retrieved: ["Decizie montaj cu termen"]
+    claims: empty
+
+- id: RC-008
+  severity: must
+  about: "claim susținut doar de memorie → forțat ipoteză, chiar dacă naratorul minte"
+  seed:
+    - {title: "Decizie montaj din memorie", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "s-a decis ceva la montaj?"
+  query: [{mention: "montaj", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  narrate:
+    claims:
+      - {text: "S-a decis montajul.", status: fact,
+         support: [{type: memory, memory_id: "$MID0", kind: decision}]}
+  expect:
+    retrieved: ["Decizie montaj din memorie"]
+    claims: [{status: hypothesis}]
+
+- id: RC-009
+  severity: must
+  about: "claim cu valoare Odoo REALĂ → fact, chiar dacă naratorul o subestimează"
+  seed:
+    - {title: "Decizie montaj cu termen real", kind: decision,
+       anchors: [{role: subject, code: TASK, res_id: 101}]}
+  question: "când montăm mobilierul?"
+  query: [{mention: "montaj", normalized: "Montaj mobilier terasă", hint: TASK}]
+  rescore: [[0, TASK, 101, 0.95]]
+  narrate:
+    claims:
+      - {text: "Termenul taskului e 11 iulie.", status: hypothesis,
+         support: [{type: odoo, anchor_code: TASK, res_id: 101,
+                    field: date_deadline, value: "2026-07-11"}]}
+  expect:
+    retrieved: ["Decizie montaj cu termen real"]
+    claims: [{status: fact}]
