@@ -14,6 +14,18 @@ ok()   { printf '   ✔ %s\n' "$*"; }
 warn() { printf '   ⚠ %s\n' "$*"; }
 
 say "dependențe"
+# Hermes se instalează automat (pachetul public hermes-agent) — ținta produsului:
+# o singură comandă. Restul (tmux, git, claude autentificat) rămân precondiții.
+if ! command -v hermes >/dev/null 2>&1; then
+  echo "   hermes lipsește — îl instalez din PyPI (hermes-agent)…"
+  if python3 -m pip install --user -q hermes-agent 2>/dev/null || pipx install hermes-agent 2>/dev/null; then
+    export PATH="$HOME/.local/bin:$PATH"
+    command -v hermes >/dev/null 2>&1 && ok "hermes-agent instalat" \
+      || warn "instalat, dar «hermes» nu e în PATH — adaugă ~/.local/bin în PATH"
+  else
+    warn "instalarea hermes-agent a eșuat — instalează manual: pip install hermes-agent"
+  fi
+fi
 MISSING=0
 for c in tmux python3 git claude hermes; do
   command -v "$c" >/dev/null 2>&1 && ok "$c" || { warn "LIPSĂ: $c"; MISSING=1; }
@@ -64,10 +76,19 @@ else
 fi
 
 say "workdir-ul PM (mâini legate prin config)"
+# aceeași autodetecție ca în install-aipm.sh — pentru __AIPM_ROOT__ din mcp.json
+AIPM_ROOT=""
+for cand in "${PMORG_AIPM:-}" "$REPOS/PMORG" "$REPOS/pmorg" "$REPOS/pm-org" "$REPOS/aipm"; do
+  if [ -n "$cand" ] && [ -f "$cand/aipm/requirements.txt" ]; then
+    AIPM_ROOT="$cand"
+    break
+  fi
+done
 PMWD="$HOME/cc-sessions/pm"
 mkdir -p "$PMWD/.claude"
 [ -f "$PMWD/CLAUDE.md" ]              || sed "s|__HOME__|$HOME|g" "$BASE/templates/pm-workdir/CLAUDE.md"     > "$PMWD/CLAUDE.md"
-[ -f "$PMWD/.mcp.json" ]              || sed "s|__HOME__|$HOME|g" "$BASE/templates/pm-workdir/mcp.json"      > "$PMWD/.mcp.json"
+[ -f "$PMWD/.mcp.json" ]              || sed -e "s|__HOME__|$HOME|g" -e "s|__AIPM_ROOT__|${AIPM_ROOT:-$HOME/PMORG}|g" \
+                                             "$BASE/templates/pm-workdir/mcp.json"      > "$PMWD/.mcp.json"
 [ -f "$PMWD/.claude/settings.json" ]  || cp "$BASE/templates/pm-workdir/settings.json" "$PMWD/.claude/settings.json"
 ok "$PMWD"
 
@@ -92,10 +113,40 @@ PY
   fi
 fi
 
-say "auditul determinist al board-ului"
+say "auditul determinist al board-ului + digestul memoriei"
 mkdir -p "$HOME/.hermes/scripts"
 [ -f "$HOME/.hermes/scripts/audit-board.py" ] || cp "$BASE/templates/audit-board.py" "$HOME/.hermes/scripts/"
-ok "script prezent (cron-ul zilnic se instalează după configurarea Telegram: pm cron create \"0 8 * * *\" --name audit-board --no-agent --script audit-board.py --deliver telegram)"
+[ -f "$HOME/.hermes/scripts/aipm-digest.py" ] || cp "$BASE/templates/aipm-digest.py" "$HOME/.hermes/scripts/"
+ok "scripturi prezente (cron-urile se instalează după configurarea Telegram:"
+echo "     pm cron create \"0 8 * * *\" --name audit-board --no-agent --script audit-board.py --deliver telegram"
+echo "     pm cron create \"0 8 * * *\" --name aipm-digest --no-agent --script aipm-digest.py --deliver telegram)"
+
+# memoria (aipm) — PLAN-INTEGRARE etapa 1: organul se instalează inert
+if [ "${PMORG_SKIP_AIPM:-0}" = 1 ]; then
+  say "memoria (aipm)"
+  warn "sărită (PMORG_SKIP_AIPM=1) — produsul rulează fără pilonul de memorie"
+else
+  bash "$BASE/install-aipm.sh"
+
+  say "conducta de sedimentare (hook gateway → memorie) + poarta de intimitate"
+  PMPROF="$HOME/.hermes/profiles/pm"
+  mkdir -p "$PMPROF/hooks/aipm-sediment"
+  cp "$BASE/templates/hooks/aipm-sediment/HOOK.yaml" "$PMPROF/hooks/aipm-sediment/"
+  sed "s|__AIPM_ROOT__|${AIPM_ROOT:-$HOME/PMORG}|g" \
+      "$BASE/templates/hooks/aipm-sediment/handler.py" > "$PMPROF/hooks/aipm-sediment/handler.py"
+  ok "hook aipm-sediment instalat (activ la restartul gateway-ului)"
+  if [ ! -f "$PMPROF/privacy-denylist.txt" ]; then
+    cp "$BASE/templates/privacy-denylist.txt" "$PMPROF/privacy-denylist.txt"
+    ok "lista de intimitate creată (completeaz-o: $PMPROF/privacy-denylist.txt)"
+  fi
+  AIPM_ENV="${AIPM_ROOT:-$HOME/PMORG}/.env"
+  if [ -f "$AIPM_ENV" ] && ! grep -q "^PRIVACY_DENYLIST_FILE=" "$AIPM_ENV"; then
+    printf 'PRIVACY_DENYLIST_FILE=%s\n' "$PMPROF/privacy-denylist.txt" >> "$AIPM_ENV"
+    ok "PRIVACY_DENYLIST_FILE setat în .env-ul aipm"
+  fi
+  echo "   Conducta rămâne ÎNCHISĂ până la decizia explicită: INGEST_ENABLED=true"
+  echo "   în $AIPM_ENV + restart aipm (PLAN-INTEGRARE etapa 5)."
+fi
 
 if [ "$WIZARD" = 1 ]; then
   say "wizard — cele 4 secrete (Enter = sari peste)"

@@ -37,6 +37,17 @@ class ReplayRequest(BaseModel):
     source_ref: str
 
 
+class DigestRequest(BaseModel):
+    mark: bool = True
+
+
+class GatewayIngest(BaseModel):
+    author_key: str
+    text: str
+    chat_id: str = ""
+    session_id: str = ""
+
+
 def _memory_row(conn, row) -> dict:
     item = dict(row) | {"id": str(row["id"])}
     for key in ("created_at", "due_at"):
@@ -97,6 +108,14 @@ def register(app: FastAPI) -> None:
         ).start()
         return result
 
+    @app.post("/api/recall")
+    def recall_only(req: ChatRequest):
+        """Citire PURĂ (PLAN-INTEGRARE etapa 7) — calea uneltelor PM-ului prin MCP.
+
+        Spre deosebire de /api/chat, întrebarea NU se ingestează: consumatorul e un
+        agent, nu un om — textul lui nu devine fapt (P1), deci nu se scrie nimic."""
+        return recall.answer(req.message, req.session_id)
+
     @app.get("/api/memory")
     def memory_list(
         kind: str | None = None,
@@ -148,6 +167,29 @@ def register(app: FastAPI) -> None:
             if row is None:
                 raise HTTPException(404, "memory_item inexistent")
             return _memory_row(conn, row)
+
+    @app.post("/api/memory/{memory_id}/resolve")
+    def memory_resolve(memory_id: str):
+        """Felia A (etapa 8, D3): OMUL marchează angajamentul încheiat/înlocuit.
+        Audit P5: resolved_by + resolved_at. Itemii 'resolved' ies din rapoarte
+        și din recall prin filtrele status='active' existente."""
+        with db.transaction() as conn:
+            updated = conn.execute(
+                """UPDATE memory_item
+                   SET status='resolved', resolved_by='human', resolved_at=now()
+                   WHERE id=%s AND status='active' RETURNING id""",
+                (memory_id,),
+            ).fetchone()
+            if updated is None:
+                existing = conn.execute(
+                    "SELECT status FROM memory_item WHERE id=%s", (memory_id,)
+                ).fetchone()
+                if existing is None:
+                    raise HTTPException(404, "memory_item inexistent")
+                raise HTTPException(
+                    409, f"item cu status '{existing['status']}' — doar 'active' se poate rezolva"
+                )
+        return {"status": "resolved"}
 
     @app.post("/api/memory/{memory_id}/retract")
     def memory_retract(memory_id: str):
@@ -251,6 +293,14 @@ def register(app: FastAPI) -> None:
                 receipt_outcome = {"outcome": "failed", "detail": str(e)[:200]}
         return {"status": "ok", "receipt": receipt_outcome}
 
+    @app.post("/api/reports/digest")
+    def reports_digest(req: DigestRequest):
+        """Digestul proactiv (etapa 9): text determinist RO din elementele netrimise.
+        mark=true consemnează trimiterea (report_sent); mark=false = previzualizare."""
+        from .reports.digest import build_digest
+
+        return build_digest(mark=req.mark)
+
     @app.get("/api/reports/{code}")
     def report(code: str):
         from .reports.queries import REPORTS
@@ -272,6 +322,37 @@ def register(app: FastAPI) -> None:
                 (normalized_text, req.status),
             )
         return {"status": req.status}
+
+    @app.post("/api/ingest/gateway")
+    def ingest_gateway(req: GatewayIngest):
+        """Conducta de sedimentare (etapele 3+5): chemată de hook-ul aipm-sediment.
+
+        Poarta de intimitate se aplică SINCRON (refuzul e vizibil în răspuns);
+        extracția rulează async — hook-ul nu ține gateway-ul pe loc. Conducta
+        e închisă cât timp INGEST_ENABLED=false (deschiderea = decizie, P4)."""
+        from .engine import privacy
+        from .ingest.gateway_source import (
+            ingest_gateway_async, ingest_gateway_message, source_ref_for,
+        )
+
+        if not config.INGEST_ENABLED:
+            raise HTTPException(409, "conducta de sedimentare e închisă (INGEST_ENABLED=false)")
+        if not req.text.strip():
+            return {"status": "empty"}
+
+        if privacy.blocked_terms(req.text):
+            # consemnarea refuzului (fără conținut) se face în calea sincronă
+            return ingest_gateway_message(
+                req.author_key, req.text, req.chat_id, req.session_id
+            )
+
+        threading.Thread(
+            target=ingest_gateway_async,
+            args=(req.author_key, req.text, req.chat_id, req.session_id),
+            daemon=True,
+        ).start()
+        return {"status": "accepted",
+                "source_ref": source_ref_for(req.chat_id, req.session_id, req.text)}
 
     @app.post("/api/ingest/run")
     def ingest_run():

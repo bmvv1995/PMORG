@@ -11,7 +11,7 @@ from datetime import datetime
 
 from .. import config, db
 from ..adapter import get_adapter
-from . import embeddings, llm, receipts, resolution
+from . import embeddings, identity, llm, receipts, resolution
 from .extraction import ExtractedItem, ExtractionInvalid, extract, unaccent
 
 logger = logging.getLogger(__name__)
@@ -79,8 +79,13 @@ def ingest_message(
     author_name: str | None,
     author_partner_id: int | None,
     msg_date: datetime,
+    author_key: str | None = None,
 ) -> IngestResult:
+    """author_key ('telegram:<id>', identitatea VERIFICATĂ de transport) trece prin
+    vamă (identity_map, etapa 2/D1): mapată → autorul se fixează determinist, fără
+    ghicire; nemapată → gol de cunoaștere înregistrat, autorul rămâne nesetat."""
     adapter = get_adapter()
+    unknown_author = False
 
     # 1. Idempotență — 'retrying' NU contează ca procesat (plan A.§3 pasul 1)
     with db.transaction() as conn:
@@ -92,6 +97,14 @@ def ingest_message(
         if row and row["status"] != "retrying":
             return IngestResult(status="skipped", detail=row["status"])
         inventory = resolution.load_anchor_inventory(conn)
+        if author_key:
+            mapped = identity.resolve_author(conn, author_key)
+            if mapped is not None:
+                author_partner_id = mapped.partner_res_id
+                author_name = mapped.display_name
+            else:
+                unknown_author = True
+                author_partner_id = None  # niciun fapt cu autor inventat (P1)
 
     # 2. Extracție — transient → retrying/attempts; invalid → extract_failed
     try:
@@ -113,6 +126,8 @@ def ingest_message(
 
     if not items:
         with db.transaction() as conn:
+            if unknown_author:
+                identity.record_unknown_author(conn, author_key, [])
             _upsert_log(conn, source_type, source_ref, "no_items", attempts)
         return IngestResult(status="no_items")
 
@@ -186,6 +201,10 @@ def ingest_message(
                     inserted.append(str(memory_id))
             except Exception as e:  # coliziune hash / constrângere trigger — doar itemul cade
                 details.append(f"item_aruncat[{item.title[:40]}]: {str(e)[:160]}")
+
+        if unknown_author:
+            identity.record_unknown_author(conn, author_key, inserted)
+            details.append(f"autor_nemapat: {author_key}")
 
         _upsert_log(
             conn, source_type, source_ref, "done", attempts,

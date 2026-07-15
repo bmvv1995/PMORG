@@ -7,7 +7,9 @@
       ],
       "env": {
         "HERMES_OPS_AUTHOR": "pm",
-        "HERMES_BIN": "__HOME__/.local/bin/pm"
+        "HERMES_BIN": "__HOME__/.local/bin/pm",
+        "AIPM_URL": "http://127.0.0.1:8090",
+        "AIPM_ENV_FILE": "__AIPM_ROOT__/.env"
       }
     }
   }

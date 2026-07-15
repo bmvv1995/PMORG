@@ -1,0 +1,12 @@
+# Lista „niciodată la AI" — poarta de intimitate (D2).
+# Un termen sau o expresie pe linie; liniile cu # sunt comentarii.
+# Potrivirea e insensibilă la diacritice și acoperă flexiunile
+# (ex. „salariu" oprește și „salariului", „salariile").
+# Fișierul e versionat în git-ul organizației (~/.hermes) — orice
+# schimbare lasă urmă (P5). Un mesaj care conține un termen de aici
+# NU intră în memorie; refuzul se consemnează fără conținut.
+#
+# Exemple (șterge-le și pune-le pe ale tale):
+# salariu
+# concediu medical
+# parola

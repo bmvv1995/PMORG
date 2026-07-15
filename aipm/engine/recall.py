@@ -330,6 +330,18 @@ def answer(question: str, session_id: str | None) -> dict:
     claims = _postvalidate_claims(data["claims"], S, memory_ids, deleted, types)
 
     turns.append((question, data["answer_ro"]))
+
+    # 8. jurnalul (etapa 10, P5): latura de ASISTENT, append-only, în carantină.
+    # Latura de utilizator verbatim așteaptă poarta de intimitate (etapa 4).
+    try:
+        with db.transaction() as conn:
+            conn.execute(
+                "INSERT INTO chat_turn (session_id, role, body, degraded) VALUES (%s,'assistant',%s,%s)",
+                (session_id, data["answer_ro"], degraded),
+            )
+    except Exception:
+        logger.exception("jurnalizarea turului de asistent a eșuat (răspunsul pleacă oricum)")
+
     return {
         "session_id": session_id,
         "answer_ro": data["answer_ro"],

@@ -1,0 +1,12 @@
+[Unit]
+Description=AI-PM — memoria organizației (aipm)
+After=network.target
+
+[Service]
+WorkingDirectory=__ROOT__
+ExecStart=__ROOT__/.venv/bin/python -m aipm.main
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

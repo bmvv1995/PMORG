@@ -57,7 +57,10 @@ instantaneele se reîmprospătează cu `git archive`.
 
 ## Ce urmează aici
 
-1. `docs/PLAN-INTEGRARE.md` — ordinea joncțiunilor și conductelor din
-   INTENT, cu criterii de ieșire verificabile per etapă (se dezvoltă cu
-   Ultraplan, pe acest repo).
+1. [`docs/PLAN-INTEGRARE.md`](docs/PLAN-INTEGRARE.md) — ordinea etapelor cu
+   criterii de ieșire verificabile, deciziile consemnate și starea per etapă
+   (toate cele 10 etape implementate 2026-07-08/09; resturile marcate în doc).
+2. [`docs/GO-LIVE.md`](docs/GO-LIVE.md) — pașii de instalare pe server:
+   installer → secrete → Odoo real → vama (migrarea de identități) → lista
+   de intimitate → deschiderea conductei → livrarea proactivă.
 2. Compoziția: instalarea componentelor împreună, moștenind installer-ul.

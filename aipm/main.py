@@ -33,9 +33,16 @@ async def _ingest_loop():
 
 
 async def _lifespan(app: FastAPI):
-    task = asyncio.create_task(_ingest_loop())
+    task = None
+    if config.INGEST_ENABLED:
+        task = asyncio.create_task(_ingest_loop())
+    else:
+        logger.warning("ingest DEZACTIVAT (INGEST_ENABLED=false) — memoria e doar-citire pe chatter")
+    if not config.AIPM_AUTH_TOKEN:
+        logger.warning("AIPM_AUTH_TOKEN gol — API-ul rulează FĂRĂ autentificare (doar pentru dev)")
     yield
-    task.cancel()
+    if task is not None:
+        task.cancel()
     db.close_pool()
 
 
@@ -80,6 +87,8 @@ def health():
         "embed_ok": bool(config.EMBED_API_KEY),
         "cursor_lag": None,
         "adapter_impl": config.ODOO_ADAPTER,
+        "ingest_enabled": config.INGEST_ENABLED,
+        "auth_enabled": bool(config.AIPM_AUTH_TOKEN),
     }
     try:
         with db.transaction() as conn:

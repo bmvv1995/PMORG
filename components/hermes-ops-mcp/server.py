@@ -314,6 +314,93 @@ tool(
         if os.path.isdir(ADMIN_QUEUE) else [], ensure_ascii=False, indent=1), False),
 )
 
+# --- memoria (aipm) — DOAR citire (PLAN-INTEGRARE etapa 7, INTENT fluxul 2) ---
+# PM-ul e consumator read-only de memorie (P1). Suprafața de citire e FIXĂ,
+# în oglinda porții de scriere din aipm: doar endpoint-urile de mai jos,
+# niciodată /api/chat (care scrie) sau vreun POST de mutare.
+
+import urllib.error
+import urllib.request
+
+AIPM_URL = os.environ.get("AIPM_URL", "http://127.0.0.1:8090").rstrip("/")
+AIPM_ENV_FILE = os.environ.get("AIPM_ENV_FILE", "")
+AIPM_TIMEOUT = int(os.environ.get("AIPM_TIMEOUT", "60"))
+
+READ_ENDPOINTS = frozenset({"/api/recall", "/api/reports/", "/api/review/queue"})
+
+REPORT_CODES = ("due_soon", "commitments_missing", "stale_questions", "external_recurring")
+
+
+def _aipm_token():
+    tok = os.environ.get("AIPM_TOKEN", "")
+    if tok:
+        return tok
+    if AIPM_ENV_FILE and os.path.exists(AIPM_ENV_FILE):
+        for line in open(AIPM_ENV_FILE):
+            if line.startswith("AIPM_AUTH_TOKEN="):
+                return line.split("=", 1)[1].strip()
+    return ""
+
+
+def _aipm(method, path, payload=None):
+    """Apel HTTP către aipm, restrâns structural la suprafața de citire."""
+    if not any(path == e or (e.endswith("/") and path.startswith(e)) for e in READ_ENDPOINTS):
+        return f"[refuzat] {path} nu e pe suprafața de citire a memoriei", True
+    req = urllib.request.Request(
+        AIPM_URL + path,
+        method=method,
+        headers={"Content-Type": "application/json",
+                 "Authorization": f"Bearer {_aipm_token()}"},
+        data=json.dumps(payload, ensure_ascii=False).encode() if payload is not None else None,
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=AIPM_TIMEOUT) as resp:
+            return resp.read().decode("utf-8", "replace"), False
+    except urllib.error.HTTPError as e:
+        return f"[aipm {e.code}] {e.read().decode('utf-8', 'replace')[:400]}", True
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        return f"[aipm indisponibil] {e}", True
+
+
+tool(
+    "aipm_recall",
+    "Întreabă memoria organizației (aipm). Răspunsul vine cu claims etichetate "
+    "mecanic: 'fact' = susținut de Odoo chiar acum; restul e ipoteză. Citire pură — "
+    "întrebarea NU se memorează. Folosește session_id pentru continuitate.",
+    {
+        "question": _s("Întrebarea, în română"),
+        "session_id": _s("Id-ul sesiunii de dialog (opțional; îl primești în răspuns)"),
+    },
+    ["question"],
+    lambda a: _aipm("POST", "/api/recall",
+                    {"message": a["question"],
+                     **({"session_id": a["session_id"]} if a.get("session_id") else {})}),
+)
+
+tool(
+    "aipm_reports",
+    "Un raport al memoriei: due_soon (termene apropiate/restante), "
+    "commitments_missing (angajamente fără urmă), stale_questions (întrebări "
+    "rămase deschise), external_recurring (entități necunoscute recurente).",
+    {"code": {"type": "string", "enum": list(REPORT_CODES),
+              "description": "Codul raportului"}},
+    ["code"],
+    lambda a: (
+        _aipm("GET", f"/api/reports/{a['code']}")
+        if a["code"] in REPORT_CODES
+        else (f"[refuzat] raport necunoscut: {a['code']}", True)
+    ),
+)
+
+tool(
+    "aipm_review_queue",
+    "Coada de verificare a memoriei: ancore nesigure + itemi fără chitanță. "
+    "Doar citire — confirmarea/realocarea o face OMUL în pagina /review a aipm.",
+    {},
+    [],
+    lambda a: _aipm("GET", "/api/review/queue"),
+)
+
 # --- send ---
 
 tool(
