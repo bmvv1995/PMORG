@@ -1,10 +1,13 @@
 # PM organizațional
 
-> **Direcția de produs PMORG v2 (în revizuire, 2026-07-16):** definiția
-> țintă, arhitectura, MVP-ul și deciziile canonice sunt în
+> **Revizia v0.3 a direcției de produs PMORG v2 (în revizuire, 2026-07-17):** definiția
+> țintă, arhitectura, MVP-ul, strategia datelor și sandboxul de evaluare sunt în
 > [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md). Acolo unde există o
 > contradicție, documentele v2 descriu direcția propusă, iar acest README și
 > documentele istorice descriu produsul implementat la commitul curent.
+> Direcția v2 este **Odoo-first și organization-agnostic**: ținta cere ca
+> același build să fie validat pe profiluri sintetice de distribuție,
+> servicii și Project-only.
 > Instrucțiunile de instalare de mai jos instalează implementarea curentă,
 > **nu** aplicația Odoo PMORG v2.
 
@@ -96,7 +99,9 @@ după configurare. Ghidul complet, pas cu pas:
 
 | Document | Ce explică |
 |---|---|
-| [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md) | direcția țintă: produs, arhitectură, MVP, decizii și handoff |
+| [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md) | intrarea în suita canonică v2 și ordinea completă de lectură |
+| [strategia de date a memoriei](docs/pmorg-v2/05-MEMORY-DATA.md) | cum construim lumea, oamenii și adevărul măsurabil fără date de producție |
+| [sandboxul complet de evaluare](docs/pmorg-v2/06-EVALUATION-SANDBOX.md) | izolarea SUT–oracle, run bundle, worldgen, corpus, scoring și fazare |
 | acest README | produsul, pe înțeles |
 | [`docs/INTENT-UNIFICARE.md`](docs/INTENT-UNIFICARE.md) | legea: componentele, principiile P1–P6, joncțiunea unică, fluxurile |
 | [`docs/PLAN-INTEGRARE.md`](docs/PLAN-INTEGRARE.md) | etapele construite, deciziile consemnate (D1–D4), starea fiecăreia |
