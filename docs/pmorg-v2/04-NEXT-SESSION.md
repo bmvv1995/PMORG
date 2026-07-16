@@ -2,9 +2,10 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Pregătit pentru execuție — suita v2 aprobată la 2026-07-16 |
-| Data | 2026-07-16 |
-| Obiectiv | Scheletul instalabil al aplicației și prima felie de date/teste |
+| Status | Blocat — necesită acceptarea ADR-013 și ADR-014 |
+| Versiune suită | 0.3 |
+| Data | 2026-07-17 |
+| Obiectiv | Nucleul instalabil, fără dependențe de domeniu, și profilul minimal |
 
 ## 1. Instrucțiunea de pornire
 
@@ -14,7 +15,9 @@ Citește integral, în această ordine:
 2. `docs/pmorg-v2/01-ARCHITECTURE.md`;
 3. `docs/pmorg-v2/02-MVP.md`;
 4. `docs/pmorg-v2/03-DECISIONS.md`;
-5. acest document.
+5. `docs/pmorg-v2/05-MEMORY-DATA.md`;
+6. `docs/pmorg-v2/06-EVALUATION-SANDBOX.md`;
+7. acest document.
 
 Aceste documente au precedență asupra README-ului și documentelor istorice
 acolo unde descriu diferit arhitectura țintă. Documentele vechi rămân
@@ -24,8 +27,9 @@ simula că v2 există deja.
 ## 2. Obiectivul unic al sesiunii
 
 > Creează și verifică scheletul instalabil `pmorg_core`, cu
-> modelele minime, extensia `project.task`, datele sintetice de bază și
-> testele structurale. Nu implementa orchestrarea, memoria MCP sau AI-ul.
+> modelele minime, extensia `project.task`, profilul sintetic minimal și
+> testele structurale. Nucleul trebuie să funcționeze fără HR, Inventory sau
+> Time Off. Nu implementa orchestrarea, memoria MCP sau AI-ul.
 
 Sesiunea se oprește după ce această felie este instalabilă și testată. Nu
 continuă automat spre runner, Hermes sau integrarea memoriei.
@@ -34,16 +38,22 @@ continuă automat spre runner, Hermes sau integrarea memoriei.
 
 - confirmă repo-ul, branch-ul și commitul de bază;
 - verifică `git status` și păstrează orice schimbare existentă;
-- verifică faptul că ADR-urile necesare din `03-DECISIONS.md` au statutul
-  `Accepted`; dacă oricare este încă `Proposed`, oprește-te fără modificări și
-  cere aprobarea explicită a suitei;
-- folosește baseline-ul **Odoo 19 Community**, cu modulele `base`, `project`
-  și `hr`; orice schimbare a baseline-ului necesită actualizarea documentelor
-  de decizie înaintea codului;
+- verifică faptul că ADR-001, ADR-002, ADR-003, ADR-010, ADR-011, ADR-013 și
+  ADR-014 din `03-DECISIONS.md` au statutul `Accepted`; acestea sunt deciziile
+  necesare S1. Dacă oricare este încă `Proposed`, oprește-te fără modificări
+  și cere aprobarea explicită. ADR-015–018 nu blochează S1; devin obligatorii
+  numai înaintea etapelor de evaluare pe care le guvernează;
+- folosește baseline-ul **Odoo 19 Community**, cu modulele `base` și
+  `project`, la revizia `1b8f6802832cfa4d146193a912af1f4445d09f0a`; baza testului minimal nu instalează
+  `hr`, `stock` sau Time Off; dacă se construiește o imagine, consemnează
+  digestul și lock-ul dependențelor; orice schimbare a baseline-ului necesită
+  actualizarea documentelor de decizie înaintea codului;
 - verifică modul concret de rulare a Odoo 19 Community și a testelor;
 - verifică dacă există `project-protocol.json` și aplică protocolul dacă
   apare ulterior;
 - nu folosi credențiale, baze sau servicii de producție;
+- orice endpoint/DB/instance UUID de test trebuie declarat explicit și
+  verificat fail-closed; un default de producție invalidează preflightul;
 - nu descărca și nu importa date reale.
 
 Dacă runtime-ul Odoo 19 Community de test nu este disponibil, poate fi
@@ -64,12 +74,43 @@ odoo_addons/
     views/
     data/
     tests/
+evaluation/
+  profiles/
+    org-min.yaml
 ```
 
-Prima felie folosește un singur addon `pmorg_core`, dependent de `project` și
-`hr`. Separarea ulterioară în addon-uri nu face parte din această sesiune.
+Orice substrat S0 existent este numai infrastructură de referință, nu sursa
+canonică a addon-ului și nu Gate A. Codul nou trăiește în `odoo_addons/`, iar
+orice deploy îl consumă fără a păstra o copie divergentă.
+
+Prima felie folosește un singur addon `pmorg_core`, dependent numai de `base`
+și `project`. Nu importă, nu moștenește și nu declară relații către
+`hr.employee`, `stock.*`, `hr.leave` sau alte modele opționale. Anchor
+pack-urile de domeniu apar în sesiuni ulterioare.
+
+`evaluation/profiles/org-min.yaml` este manifest de date/configurație inclus în
+același build, nu un manifest alternativ de addon. El declară cel puțin
+`profile_id`, revizia Odoo fixată, modulele `base`/`project`, lista goală de
+pack-uri opționale și referințele către politici/fixture-uri. Celelalte două
+profiluri îl vor completa ulterior prin fișiere de configurație paralele,
+fără schimbarea `pmorg_core/__manifest__.py`.
 
 ## 5. Modelele și câmpurile primei felii
+
+### `pmorg.identity`
+
+Minimul obligatoriu:
+
+- `company_id`;
+- `partner_id` obligatoriu;
+- `user_id` opțional;
+- `identity_kind`: `human`, `agent` sau `system`;
+- unicitate pe `(company_id, partner_id)`;
+- constrângere ca `user_id.partner_id` să coincidă cu `partner_id`.
+
+Ownerii, validatorii și participanții PMORG referă exclusiv acest model. Nu
+introduce câmpuri alternative care să permită alegerea între partner, user și
+employee.
 
 ### `pmorg.initiative`
 
@@ -77,7 +118,7 @@ Minimul obligatoriu:
 
 - identificator și nume;
 - companie;
-- owner;
+- `owner_identity_id`;
 - descriere/context;
 - obiectiv;
 - stare lifecycle;
@@ -105,7 +146,8 @@ Minimul obligatoriu:
 - starea de orchestrare inițială;
 - `next_check_at`;
 - starea verificării;
-- legătura cu participantul sintetic, dacă modelul ales o permite curat.
+- legătura cu participantul prin `pmorg.identity`, fără dependență de
+  `hr.employee`.
 
 Nu implementa încă claim, lease, heartbeat, API-ul runtime sau controller-ele.
 Câmpurile lor se adaugă după înghețarea contractului din etapa următoare.
@@ -123,31 +165,39 @@ această sesiune.
 
 ## 7. Date sintetice
 
-Fixture/demo separat de datele normale:
+Fixture/demo separat de datele normale, pentru profilul `ORG-MIN`:
 
-- companie: `Delta Distribution Test SRL`;
-- Mara Ionescu — owner;
-- Andrei Pop — manager operațional;
-- Mihai Stan — gestionar;
-- proiect: `Clarificări operaționale — TEST`;
-- inițiativă: `XNX-001 — clarifică diferența raportată`;
-- task: `Discută cu gestionarul despre incidentul XNX-001`;
-- task rezultat: `Aplică acțiunea confirmată pentru XNX-001`.
+- companie: `Atelier Minimal Test SRL`;
+- Ana Dobre — owner;
+- Paul Rusu — validator autorizat;
+- Victor Neagu — participant;
+- fiecare are `pmorg.identity` peste `res.partner`, cu `user_id` numai unde
+  acțiunea în Odoo îl cere; nu există angajați;
+- proiect: `Coordonare internă — TEST`;
+- inițiativă: `MIN-001 — clarifică criteriul de acceptare`;
+- task: `Obține criteriul de acceptare lipsă`;
+- task rezultat: `Finalizează livrabilul conform criteriului confirmat`.
 
 Datele trebuie să se încarce numai explicit în mod demo/test și să nu conțină
 adrese, telefoane, emailuri sau identificatori reali.
 
 ## 8. Testele obligatorii
 
-1. addon-ul și dependențele sunt declarate corect;
-2. inițiativa poate fi creată și legată de proiect;
-3. taskurile pot fi legate de inițiativă;
-4. tipurile de execuție sunt validate;
-5. taskurile sintetice se încarcă repetabil;
-6. compania și accesul de bază sunt respectate;
-7. închiderea inițiativei fără datele minime cerute este refuzată, dacă
+1. addon-ul declară numai dependențele `base` și `project`;
+2. addon-ul se instalează într-o bază fără `hr`, `stock` și Time Off;
+3. modelele și view-urile nu conțin referințe directe la modele opționale;
+4. identitatea impune unicitatea și consistența partner–user;
+5. ownerul și participantul sunt referiți numai prin `pmorg.identity`;
+6. inițiativa poate fi creată și legată de proiect;
+7. taskurile pot fi legate de inițiativă;
+8. tipurile de execuție sunt validate;
+9. taskurile sintetice se încarcă repetabil;
+10. manifestul `org-min.yaml` fixează baseline-ul și selectează numai
+    capabilitățile permise profilului minimal;
+11. compania și accesul de bază sunt respectate;
+12. închiderea inițiativei fără datele minime cerute este refuzată, dacă
    această constrângere poate fi implementată complet în felia curentă;
-8. instalarea nu creează date sintetice când demo/test este dezactivat.
+13. instalarea nu creează date sintetice când demo/test este dezactivat.
 
 Rulează testele Odoo reale dacă runtime-ul este disponibil. `git diff
 --check` și importurile Python nu înlocuiesc testul de instalare.
@@ -160,7 +210,10 @@ Rulează testele Odoo reale dacă runtime-ul este disponibil. `git diff
 - Telegram, Teams, email și Odoo Discuss automatizat;
 - cron, scheduler, controller-e și timp virtual;
 - claim, lease, heartbeat și retries;
-- Inventory și Time Off anchor packs;
+- HR, Inventory și Time Off anchor packs;
+- cod condițional, `__manifest__.py`, build sau feature flag alternativ per
+  organizație; manifestele comune de date/configurație din
+  `evaluation/profiles/` sunt permise și obligatorii;
 - migrarea datelor istorice;
 - deploy, pilot, commit, push sau PR fără cerere separată;
 - orice conexiune la producție.
@@ -169,9 +222,11 @@ Rulează testele Odoo reale dacă runtime-ul este disponibil. `git diff
 
 - structura addon-ului este clară și minimă;
 - modelele și câmpurile de mai sus există;
-- addon-ul se instalează efectiv într-o bază Odoo 19 Community de test;
+- addon-ul se instalează efectiv într-o bază Odoo 19 Community cu `project`,
+  fără `hr`, `stock` și Time Off;
 - UI-ul minim este navigabil în acea bază;
 - fixture-urile sintetice sunt separate și repetabile;
+- manifestul `org-min.yaml` descrie profilul fără a modifica buildul;
 - testele disponibile sunt verzi;
 - nu există integrare prematură cu componentele excluse;
 - `git diff --check` este curat;
@@ -180,18 +235,27 @@ Rulează testele Odoo reale dacă runtime-ul este disponibil. `git diff
 ## 11. Prompt recomandat pentru sesiunea nouă
 
 > Lucrează în repo-ul PMORG. Citește integral `docs/pmorg-v2/` în ordinea din
-> `04-NEXT-SESSION.md`. Verifică mai întâi că toate ADR-urile necesare sunt
-> `Accepted`; dacă există vreunul `Proposed`, oprește-te fără modificări și
-> cere aprobarea explicită. Tratează deciziile `Accepted` drept normative.
+> `04-NEXT-SESSION.md`. Verifică mai întâi că ADR-001, ADR-002, ADR-003,
+> ADR-010, ADR-011, ADR-013 și ADR-014 sunt `Accepted`; dacă unul este
+> `Proposed`, oprește-te fără modificări și cere aprobarea explicită.
+> ADR-015–018 nu blochează S1. Tratează deciziile `Accepted` drept normative.
 > Implementează numai obiectivul unic al primei sesiuni: scheletul instalabil
-> al aplicației Odoo PMORG, modelele minime, extensia `project.task`, datele
-> sintetice și testele structurale. Nu integra Hermes, memoria MCP, LLM-uri
-> sau canale. Nu utiliza și nu conecta nimic din producție. Oprește-te la
-> Definition of Done și raportează separat dovezile și blocajele.
+> al aplicației Odoo PMORG, modelele minime, extensia `project.task`, profilul
+> minimal și testele structurale. Implementează identitatea canonică
+> `pmorg.identity`; ownerii și participanții nu au câmpuri alternative către
+> user/partner/employee. `pmorg_core` depinde numai de `base` și `project`; nu
+> instala și nu referi HR, Inventory sau Time Off. Nu integra Hermes, memoria
+> MCP, LLM-uri sau canale. Nu utiliza și nu conecta nimic din producție.
+> Oprește-te la Definition of Done și raportează separat dovezile și
+> blocajele.
 
 ## 12. Etapa care urmează, dar nu face parte din sesiune
 
-După aprobarea primei felii se proiectează și testează contractele atomice
-pentru claim/lease/idempotency, outbox/inbox și adaptorul de memorie. Runnerul
-de scenarii apare abia după aceste contracte; Hermes apare după smoke testul
-Odoo–memorie.
+După aprobarea primei felii se îngheață contractele atomice pentru
+claim/lease/idempotency și outbox/inbox și se construiește kernelul de
+evaluare din etapa S2: manifest, oracle separat, ceas, recorder și scorer
+minim, până la închiderea Gate A. Urmează anchor pack-urile HR/Inventory și
+adaptorul de memorie.
+Harness-ul pornește cele trei baze din același build; aceasta este precondiția
+structurală a Gate C2, nu Gate C2 complet. Runnerul conversațional apare abia
+după contracte și memorie; Hermes apare după smoke testul Odoo–memorie.

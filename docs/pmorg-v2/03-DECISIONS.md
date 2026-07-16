@@ -2,15 +2,17 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Aprobat — ADR-001–012 normative (2026-07-16) |
-| Versiune | 0.1 |
-| Data | 2026-07-16 |
+| Status | ADR-001–012 Accepted; ADR-013–018 Proposed |
+| Versiune | 0.3 |
+| Data | 2026-07-17 |
 | Domeniu | Produsul PMORG v2 și MVP-ul inițial |
 
 O decizie `Accepted` este normativă. Schimbarea ei necesită un ADR nou care o
 marchează explicit `Superseded`. `Proposed` indică o decizie formulată, dar
-neaprobată încă. Suita de documente v2 a fost aprobată explicit de owner la
-2026-07-16; ADR-001–012 au statutul `Accepted` și sunt normative.
+neaprobată încă. Suita v0.1 a fost aprobată explicit de owner la 2026-07-16;
+ADR-001–012 își păstrează textul și statutul `Accepted`. Extensiile v0.3 sunt
+formulate separat în ADR-013–018 și rămân `Proposed` până la aprobarea lor
+explicită; ele nu modifică retroactiv deciziile acceptate.
 
 ## ADR-001 — PMORG este Odoo-first
 
@@ -147,15 +149,157 @@ pilotului și nu este numită sau folosită drept test.
 
 **Alternative respinse:** self-hosting prezentat drept soluție completă; ignorarea celorlalte controale deoarece modelul rulează local.
 
+## ADR-013 — Produsul este agnostic față de organizația concretă
+
+**Status:** Proposed
+
+**Decizie:** Nucleul PMORG conține numai conceptele universale ale
+operatorului organizațional și nu codifică funcții, procese sau modele de
+domeniu ale unui client. Specificul apare exclusiv prin module Odoo active,
+anchor packs versionate, identități, roluri, permisiuni, politici și date.
+Același artefact PMORG trebuie să treacă trei profiluri sintetice în baze
+separate: distribuție (`project` + `hr` + `stock`), servicii profesionale
+(`project` + `hr`) și minimal (`project`).
+
+**Consecințe:** `pmorg_core` nu depinde de `hr`, `stock`, Time Off sau alte
+module opționale și nu are câmpuri directe către modelele lor. Profilele pot
+schimba numai configurația și addon-urile de ancorare instalate, nu codul.
+Setul versionat de artefacte și checksum-uri rămâne identic; profilul
+selectează un subset fără rebuild. Un concept al unui modul absent rămâne
+indisponibil semantic. Conformitatea este Gate C2 al MVP-ului.
+În raport cu ADR-011, această decizie fixează una dintre formele modulare
+permise acolo: pentru MVP, `project` intră în `pmorg_core`, fără un addon
+separat `pmorg_project`; runtime-ul, memoria și anchor pack-urile rămân
+componente distincte. ADR-011 nu este supersedat în rest.
+
+**Alternative respinse:** fork per client; condiții cu numele organizației;
+HR obligatoriu în nucleu; ontologie universală care expune concepte absente;
+LLM folosit pentru a ghici procesele în locul configurației validate.
+
+## ADR-014 — Identitatea canonică este `pmorg.identity`
+
+**Status:** Proposed
+
+**Decizie:** Ownerii, validatorii, participanții, agenții și sistemele sunt
+referite în nucleu prin `pmorg.identity`. Fiecare identitate are companie și
+`res.partner` obligatoriu, plus `res.users` opțional când poate acționa în
+Odoo. Rolurile PMORG nu aleg alternativ între partner, user și employee.
+Pack-ul HR leagă `hr.employee` de identitatea existentă prin user sau work
+contact și refuză mapările absente ori ambigue.
+
+**Consecințe:** profilul minimal poate reprezenta complet persoane și agenți
+fără HR; instalarea HR adaugă semantică de angajare și ierarhie fără a crea o
+a doua identitate. Autoritatea rezultă din utilizator și politici/delegări,
+nu din simpla identitate.
+
+**Alternative respinse:** `hr.employee` obligatoriu; câmpuri polimorfe
+partner/user/employee; identități paralele per anchor pack; potrivire fuzzy
+automată a persoanelor.
+
+## ADR-015 — Oracle-ul de evaluare este separat și invizibil SUT-ului
+
+**Status:** Proposed
+
+**Decizie:** Sandboxul are două frontiere: produsul evaluat și harness-ul
+privat. Oracle DB păstrează adevărul fizic, cunoașterea privată, expected
+outputs, spliturile și gold labels într-un serviciu, volum, rol și rețea
+separate de Odoo și memoria PMORG. SUT nu are rută, DNS, mount, secret sau API
+către oracle. Scorerul citește exporturi și oracle numai după quiescence/seal.
+
+**Consecințe:** validarea online din PMORG folosește numai Odoo, evidențe,
+identități și politicile normale; oracle-ul nu răspunde întrebărilor
+operatorului. Fiecare run are probe anti-leak și canary secret. O scurgere,
+trasă incompletă sau un defect spontan al simulatorului invalidează runul, nu
+devine scor slab al produsului. O tentativă nepermisă inițiată de SUT rămâne
+quality failure chiar dacă disclosure guard o oprește; nu poate fi convertită
+în `INVALID_SIMULATOR`. Replacementurile și pragul maxim de invaliditate sunt
+predeclarate, iar runul original rămâne în audit.
+
+**Alternative respinse:** tabele oracle în `aipm`; aceeași bază PostgreSQL cu
+scheme separate; expected answers montate read-only în SUT; oracle folosit ca
+validator business în timpul rulării; scorer online în bucla operatorului.
+
+## ADR-016 — Worldgen are nucleu generic și domain packs
+
+**Status:** Proposed
+
+**Decizie:** Worldgen core cunoaște numai identități, structură, calendar,
+proiecte, evenimente, timp și materializare. Procesele de industrie apar în
+worldgen packs versionate, separate conceptual de `pmorg_anchor_*`. Pack-urile
+inițiale compun profilurile minimal, servicii profesionale și distribuție;
+HoReCa este un pack compozit ulterior.
+
+**Consecințe:** un profil declară module Odoo, anchor packs, worldgen packs,
+politici și date fără cod per organizație. Seed-ul, versiunile pack-urilor și
+hash-ul planului produc `world.lock`; materializarea prin ORM/API Odoo trebuie
+să aibă o proiecție canonică reproductibilă.
+
+**Alternative respinse:** generator HoReCa ca nucleu; generator separat per
+client; date paralele care nu sunt materializate în Odoo; confundarea
+generatorului de fixture cu ontologia/anchor pack-ul produsului.
+
+## ADR-017 — Evaluarea este un run bundle imuabil și temporal explicit
+
+**Status:** Proposed
+
+**Decizie:** Fiecare rulare fixează prin manifest versionat buildurile,
+contractele, profilul, scenariul, seed-ul, politicile, ceasul, fault planul și,
+la Gate E/F2, configurațiile de model. Manifestul public este vizibil SUT;
+manifestul oracle este legat prin HMAC sau hash cu nonce secret de entropie
+mare, nu prin hash simplu al seed-ului. Timpul de business este virtual și
+distinct de timpul real de înregistrare. În sandbox, timpul autoritativ este
+rezolvat server-side dintr-un `tick_id` emis de ceasul trusted; runtime-ul nu
+poate furniza un `now` autoritativ.
+
+**Consecințe:** Gate A–D se reproduc din același bundle în volume curate;
+Gate E/F2 se reproduc ca configurație și se califică statistic pe replici
+predeclarate. La fiecare barieră de tick, un exporter trusted sigilează
+proiecțiile Odoo/memorie necesare scorării `as_of_event_seq`; starea finală nu
+înlocuiește istoria. Resetul distruge volumele și emite credențiale noi. Un
+scorer nou creează un scoring run nou, fără a rescrie verdictul istoric.
+
+**Alternative respinse:** descriere verbală a configurației; taguri mutable;
+sleep și ceasul hostului pentru longitudinalitate; reutilizarea bazei între
+runs; alegerea manuală a celei mai bune rulări LLM.
+
+## ADR-018 — Corpusul separă train, calibration și hidden-test prin lineage
+
+**Status:** Proposed
+
+**Decizie:** Corpusul canonic separă `case_version`, `benchmark_run`,
+`corpus_example` și `corpus_release`. Splitul este atribuit înaintea
+tuningului la nivel de familie de scenariu/incident și `leakage_group_id`, nu
+per turn sau seed. Hidden labels sunt accesibile numai scorerului; fiecare
+încercare hidden este auditată.
+
+**Consecințe:** același incident și derivatele sale nu pot alimenta simultan
+train și hidden-test. Pragurile se stabilesc pe calibration și se îngheață
+înaintea hidden-test. O eroare din pilot intră numai ca reproducere sintetică
+sanitizată într-o versiune viitoare; datele și conversațiile reale nu sunt
+copiate automat.
+
+**Alternative respinse:** același corpus folosit simultan pentru training și
+verdict; split aleator pe mesaje; tuning după vizualizarea hidden-test;
+rescrierea etichetelor într-un release publicat; exportul formatului unui
+provider drept sursă canonică.
+
 ## Întrebări rămase deschise
 
 1. Schema și numele tehnice exacte ale modelelor.
 2. Mașina de stare agentică și relația cu stage-urile Odoo.
 3. Semnăturile, payload-urile și codurile de eroare exacte pentru API-ul de
    orchestrare deja delimitat.
-4. Contractul MCP și comportamentul la indisponibilitatea memoriei.
-5. Împărțirea tehnică dintre nucleu și anchor packs Project/Employees din
-   MVP.
+4. Forma exactă și statutul normativ al handshake-ului de capability registry
+   propus în arhitectură, apoi payload-urile, codurile de eroare, controlul de
+   acces MCP și comportamentul la indisponibilitatea memoriei.
+5. Extinderea ulterioară a pack-urilor HR și Inventory dincolo de subsetul
+   minim fixat pentru MVP, fără mutarea dependențelor în nucleu.
 6. Matricea inițială de autonomie și aprobări.
 7. Criteriile măsurabile de acceptare a Hermes.
 8. Canalul real folosit după MVP-ul determinist.
+9. Formatul exact al manifestelor, schemelor oracle și semnăturii verdictului,
+   în limitele fixate de ADR-015–018.
+10. Pragurile și volumele minime per metrică, stabilite prin calibrare.
+11. Custodele, rotația și politica de acces pentru hidden-test.
+12. Dacă delimitarea exactă `sut_scope` pentru Gate E/F1/F2 necesită un ADR
+    separat înaintea implementării acelor etape.
