@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Blocat — necesită acceptarea ADR-013 și ADR-014 |
+| Status | Pregătit pentru execuție — ADR-urile necesare S1 sunt Accepted |
 | Versiune suită | 0.3 |
 | Data | 2026-07-17 |
 | Obiectiv | Nucleul instalabil, fără dependențe de domeniu, și profilul minimal |

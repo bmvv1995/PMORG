@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | ADR-001–012 Accepted; ADR-013–018 Proposed |
+| Status | ADR-001–014 Accepted; ADR-015–018 Proposed |
 | Versiune | 0.3 |
 | Data | 2026-07-17 |
 | Domeniu | Produsul PMORG v2 și MVP-ul inițial |
@@ -10,9 +10,10 @@
 O decizie `Accepted` este normativă. Schimbarea ei necesită un ADR nou care o
 marchează explicit `Superseded`. `Proposed` indică o decizie formulată, dar
 neaprobată încă. Suita v0.1 a fost aprobată explicit de owner la 2026-07-16;
-ADR-001–012 își păstrează textul și statutul `Accepted`. Extensiile v0.3 sunt
-formulate separat în ADR-013–018 și rămân `Proposed` până la aprobarea lor
-explicită; ele nu modifică retroactiv deciziile acceptate.
+ADR-001–012 își păstrează textul și statutul `Accepted`. Ownerul a acceptat
+explicit ADR-013 și ADR-014 la 2026-07-17. ADR-015–018 rămân `Proposed` până
+la aprobarea lor explicită; nicio extensie nu modifică retroactiv deciziile
+acceptate.
 
 ## ADR-001 — PMORG este Odoo-first
 
@@ -151,7 +152,7 @@ pilotului și nu este numită sau folosită drept test.
 
 ## ADR-013 — Produsul este agnostic față de organizația concretă
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-17)
 
 **Decizie:** Nucleul PMORG conține numai conceptele universale ale
 operatorului organizațional și nu codifică funcții, procese sau modele de
@@ -178,7 +179,7 @@ LLM folosit pentru a ghici procesele în locul configurației validate.
 
 ## ADR-014 — Identitatea canonică este `pmorg.identity`
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-17)
 
 **Decizie:** Ownerii, validatorii, participanții, agenții și sistemele sunt
 referite în nucleu prin `pmorg.identity`. Fiecare identitate are companie și
