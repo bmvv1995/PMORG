@@ -47,9 +47,9 @@ verdictul. Scope-ul său este declarat în manifest și crește pe gate-uri:
 |---|---|---|
 | A | Odoo + addon-urile PMORG | kernelul de evaluare: manifest, clock, oracle, recorder, scorer și controale anti-leak |
 | B–D | Odoo + addon-urile PMORG + memoria/adaptorul MCP | runnerul de referință, canalul și actorii scriptați |
-| E | Odoo + memorie + agentul/modelul operator | canalul, personas și evaluatorul |
+| E | Odoo + memorie + agentul/modelul operator | canalul, actorii scriptați/personas și evaluatorul |
 | F1 | Odoo + memorie + Hermes/adaptorul său | agent determinist de referință, canal și actorii scriptați |
-| F2 | Odoo + memorie + Hermes/adaptor + agentul/modelul operator înghețat la Gate E | canalul, personas și evaluatorul |
+| F2 | Odoo + memorie + Hermes/adaptor + agentul/modelul operator înghețat la Gate E | canalul, actorii scriptați/personas și evaluatorul |
 
 La Gate C–D runnerul determinist este un driver de referință: demonstrează
 contractele și bucla posibilă, dar nu primește merit pentru inteligența
