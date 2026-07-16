@@ -2,11 +2,11 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Aprobat — canonic (2026-07-16) |
-| Versiune | 0.1 |
+| Status | Propunere canonică pentru revizuire |
+| Versiune | 0.3 |
 | Data | 2026-07-16 |
 | Domeniu | Produsul-țintă, nu numai MVP-ul |
-| Baseline tehnic inițial | Odoo 19 Community |
+| Baseline tehnic inițial | Odoo 19 Community @ `1b8f6802832cfa4d146193a912af1f4445d09f0a` |
 
 ## Definiție
 
@@ -26,6 +26,28 @@ PMORG:
 10. păstrează proveniența, deciziile și lecțiile relevante.
 
 „Persistent” înseamnă că inițiativa, obligațiile, așteptările și următoarele acțiuni supraviețuiesc restarturilor și trecerii timpului. Nu înseamnă un LLM sau o conversație pornită permanent.
+
+## Agnosticism organizațional
+
+PMORG este agnostic față de organizația concretă — industrie, dimensiune,
+structură și set de module — dar Odoo-first, nu ERP-agnostic în prima
+versiune. Nucleul nu codifică funcții precum gestionar sau consultant și nu
+presupune că HR, Inventory, Time Off ori Sales sunt instalate. El codifică
+numai conceptele universale PMORG și mecanismele prin care capabilitățile de
+domeniu sunt adăugate.
+
+```text
+PMORG core
++ module Odoo instalate și configurate
++ anchor packs compatibile
++ roluri, permisiuni și politici
+= operatorul unei organizații concrete
+```
+
+Specificul unei organizații intră prin configurare și date, nu prin fork-uri
+sau ramuri de cod per client. Același build PMORG trebuie să funcționeze în
+organizații cu module și politici diferite, iar conceptele unui modul absent
+trebuie să rămână indisponibile semantic.
 
 ## Promisiunea de business
 
@@ -89,10 +111,15 @@ Obiectele de prim nivel sunt:
 - intervenție și escaladare;
 - rezultat și dovadă;
 - politică de monitorizare și autonomie;
+- identitate organizațională generică;
 - ancoră Odoo și referință de memorie;
 - execuție și eveniment de task.
 
 Numele tehnice exacte se stabilesc în proiectarea schemei, fără eliminarea implicită a conceptelor.
+Nucleul leagă ownerii, validatorii și participanții prin `pmorg.identity`, iar
+subiectele prin ancore generice;
+referințele directe la modele precum `hr.employee` sau `stock.picking` apar
+numai în anchor pack-ul domeniului respectiv.
 
 ## Taskurile
 
@@ -103,7 +130,11 @@ Numele tehnice exacte se stabilesc în proiectarea schemei, fără eliminarea im
 - rezultat așteptat, termen, participanți și ancore;
 - stare agentică, claim, lease, idempotency și verificarea rezultatului.
 
-Un task precum „Discută cu gestionarul pentru clarificarea incidentului XNX” este valid în Odoo: agentul este executor, gestionarul este participant, incidentul este subiect ancorat, iar concluzia verificabilă este rezultatul așteptat.
+Într-un profil de distribuție, un task precum „Discută cu gestionarul pentru
+clarificarea incidentului XNX” este valid în Odoo: agentul este executor,
+gestionarul este participant, incidentul este subiect ancorat, iar concluzia
+verificabilă este rezultatul așteptat. Exemplul aparține configurației, nu
+nucleului PMORG.
 
 Pașii tehnici efemeri, apelurile de instrumente și retries nu devin taskuri Odoo; ele sunt execuții sau evenimente asociate taskului.
 
@@ -162,6 +193,11 @@ Orchestratorul scrie în Odoo numai prin comenzi de business înguste, autorizat
 4. Nicio acțiune nu se dublează din cauza retry-ului sau a unui eveniment repetat.
 5. Informația nouă poate înlocui informația veche fără ștergerea istoriei.
 6. Orice decizie, intervenție și escaladare importantă este explicabilă retrospectiv.
+7. Același artefact PMORG funcționează cu profiluri organizaționale diferite
+   fără modificări de cod; un modul absent nu produce concepte inventate.
+8. În evaluare, produsul nu poate accesa adevărul privat, gold labels sau
+   scorerul; un verdict este acceptabil numai dacă această separare este
+   demonstrată.
 
 ## În scop
 
@@ -184,7 +220,17 @@ Orchestratorul scrie în Odoo numai prin comenzi de business înguste, autorizat
 
 ## Relația cu MVP-ul
 
-MVP-ul implementează real Odoo PMORG și memoria, dar simulează orchestrarea, timpul și canalele prin contractele finale. Folosește exclusiv date sintetice și medii separate de producție. Hermes este integrat după validarea fluxului de produs.
+MVP-ul implementează real Odoo PMORG și memoria, dar simulează orchestrarea,
+timpul și canalele prin contractele finale. Folosește exclusiv date sintetice
+și medii separate de producție. Trei profiluri organizaționale rulează cu
+același build pentru a demonstra că specificul vine din module, anchor packs
+și politici, nu din cod. Hermes este integrat după validarea fluxului de
+produs.
+
+Sandboxul complet este un instrument separat de produs: materializează lumea
+în Odoo, păstrează oracle-ul invizibil PMORG, simulează participanții și
+emite un verdict cu dovezi. Definition of Done a instrumentului nu este
+echivalentă cu trecerea gate-urilor produsului.
 
 Suita se citește în această ordine:
 
@@ -192,7 +238,9 @@ Suita se citește în această ordine:
 2. [arhitectura țintă](01-ARCHITECTURE.md);
 3. [MVP-ul de validare](02-MVP.md);
 4. [registrul deciziilor](03-DECISIONS.md);
-5. [handoff-ul primei sesiuni de implementare](04-NEXT-SESSION.md).
+5. [strategia de date a memoriei](05-MEMORY-DATA.md);
+6. [sandboxul complet de evaluare](06-EVALUATION-SANDBOX.md);
+7. [handoff-ul primei sesiuni de implementare](04-NEXT-SESSION.md).
 
 Deciziile devin normative numai după schimbarea explicită a statutului lor
 din `Proposed` în `Accepted`.
