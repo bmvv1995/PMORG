@@ -1,5 +1,15 @@
 # PM organizațional
 
+> **Direcția de produs PMORG v2 (în revizuire, 2026-07-16):** definiția
+> țintă, arhitectura, MVP-ul și deciziile canonice sunt în
+> [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md). Acolo unde există o
+> contradicție, documentele v2 descriu direcția propusă, iar acest README și
+> documentele istorice descriu produsul implementat la commitul curent.
+> Instrucțiunile de instalare de mai jos instalează implementarea curentă,
+> **nu** aplicația Odoo PMORG v2.
+
+## Implementarea curentă (v1 / snapshot)
+
 Un conducător de procese organizaționale, artificial, instalat în casa
 clientului: **operează** munca prin board și canale persistente, **ține
 minte** organizația prin memorie ancorată în sursa ei formală (ERP-ul), și
@@ -65,7 +75,7 @@ Odoo e scheletul lumii, PM-ul e singurul cititor al tuturor.*
 
 Legea completă: [`docs/INTENT-UNIFICARE.md`](docs/INTENT-UNIFICARE.md).
 
-## Instalarea
+## Instalarea implementării curente
 
 Pe un server cu PostgreSQL 16 (+pgvector), `tmux`, `git`, `python3` și
 `claude` autentificat:
@@ -86,6 +96,7 @@ după configurare. Ghidul complet, pas cu pas:
 
 | Document | Ce explică |
 |---|---|
+| [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md) | direcția țintă: produs, arhitectură, MVP, decizii și handoff |
 | acest README | produsul, pe înțeles |
 | [`docs/INTENT-UNIFICARE.md`](docs/INTENT-UNIFICARE.md) | legea: componentele, principiile P1–P6, joncțiunea unică, fluxurile |
 | [`docs/PLAN-INTEGRARE.md`](docs/PLAN-INTEGRARE.md) | etapele construite, deciziile consemnate (D1–D4), starea fiecăreia |
@@ -110,7 +121,7 @@ components/            instantanee ale codului viu de pe server:
 `components/` sunt instantanee datate — sursa vie rulează pe server. La
 modificări pe server, instantaneele se reîmprospătează cu `git archive`.
 
-## Starea proiectului
+## Starea implementării curente
 
 Toate cele 10 etape din [planul de integrare](docs/PLAN-INTEGRARE.md) sunt
 implementate (2026-07-08/09): **109 teste verzi**, iar conducta de sedimentare
