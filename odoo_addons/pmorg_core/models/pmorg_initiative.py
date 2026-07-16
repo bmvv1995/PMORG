@@ -161,25 +161,25 @@ class PmorgInitiative(models.Model):
         return super().write(vals)
 
     def action_start_clarification(self):
-        self.write({"state": "clarifying"})
+        return self.write({"state": "clarifying"})
 
     def action_start_planning(self):
-        self.write({"state": "planned"})
+        return self.write({"state": "planned"})
 
     def action_request_confirmation(self):
-        self.write({"state": "awaiting_confirmation"})
+        return self.write({"state": "awaiting_confirmation"})
 
     def action_activate(self):
-        self.write({"state": "active"})
+        return self.write({"state": "active"})
 
     def action_start_verification(self):
-        self.write({"state": "verifying"})
+        return self.write({"state": "verifying"})
 
     def action_close(self):
-        self.write({"state": "closed", "close_date": fields.Datetime.now()})
+        return self.write({"state": "closed", "close_date": fields.Datetime.now()})
 
     def action_cancel(self):
-        self.write({"state": "cancelled"})
+        return self.write({"state": "cancelled"})
 
     def action_reset_draft(self):
-        self.write({"state": "draft"})
+        return self.write({"state": "draft"})

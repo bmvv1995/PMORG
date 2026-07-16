@@ -30,7 +30,7 @@ class PmorgSuccessCriterion(models.Model):
     evidence_note = fields.Char(string="Notă dovadă")
 
     def action_mark_verified(self):
-        self.write(
+        return self.write(
             {
                 "verified": True,
                 "verified_by_id": self.env.user.id,

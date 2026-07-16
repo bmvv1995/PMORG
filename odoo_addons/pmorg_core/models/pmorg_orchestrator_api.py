@@ -635,6 +635,17 @@ class PmorgOrchestratorApi(models.AbstractModel):
     # ------------------------------------------------------------ public API
 
     @api.model
+    def _sanitize(self, value):
+        """XML-RPC nu serializează None: îl înlocuim cu False la graniță."""
+        if value is None:
+            return False
+        if isinstance(value, dict):
+            return {k: self._sanitize(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [self._sanitize(v) for v in value]
+        return value
+
+    @api.model
     def api_call(self, command, payload):
         """Punct unic de intrare pentru runtime (execute_kw)."""
-        return self._dispatch(command, payload)
+        return self._sanitize(self._dispatch(command, payload))
