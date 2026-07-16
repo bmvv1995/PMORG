@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Date sintetice conform docs/pmorg-v2/04-NEXT-SESSION.md §7 și 02-MVP.md §7.
+         Se încarcă NUMAI în mod demo. Fără identificatori reali (.example). -->
+
+    <record id="pmorg_demo_company" model="res.company">
+        <field name="name">Delta Distribution Test SRL</field>
+    </record>
+
+    <record id="pmorg_demo_partner_mara" model="res.partner">
+        <field name="name">Mara Ionescu</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="email">mara.ionescu@delta-test.example</field>
+    </record>
+    <record id="pmorg_demo_partner_andrei" model="res.partner">
+        <field name="name">Andrei Pop</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="email">andrei.pop@delta-test.example</field>
+    </record>
+    <record id="pmorg_demo_partner_mihai" model="res.partner">
+        <field name="name">Mihai Stan</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="email">mihai.stan@delta-test.example</field>
+    </record>
+
+    <record id="pmorg_demo_employee_mara" model="hr.employee">
+        <field name="name">Mara Ionescu</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="job_title">Owner</field>
+        <field name="work_contact_id" ref="pmorg_demo_partner_mara"/>
+    </record>
+    <record id="pmorg_demo_employee_andrei" model="hr.employee">
+        <field name="name">Andrei Pop</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="job_title">Manager operațional</field>
+        <field name="work_contact_id" ref="pmorg_demo_partner_andrei"/>
+        <field name="parent_id" ref="pmorg_demo_employee_mara"/>
+    </record>
+    <record id="pmorg_demo_employee_mihai" model="hr.employee">
+        <field name="name">Mihai Stan</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="job_title">Gestionar</field>
+        <field name="work_contact_id" ref="pmorg_demo_partner_mihai"/>
+        <field name="parent_id" ref="pmorg_demo_employee_andrei"/>
+    </record>
+
+    <record id="pmorg_demo_project" model="project.project">
+        <field name="name">Clarificări operaționale — TEST</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+    </record>
+
+    <record id="pmorg_demo_initiative" model="pmorg.initiative">
+        <field name="name">XNX-001 — clarifică diferența raportată</field>
+        <field name="objective">Stabilirea cauzei diferenței de inventar și a acțiunii necesare</field>
+        <field name="state">draft</field>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="project_id" ref="pmorg_demo_project"/>
+    </record>
+
+    <record id="pmorg_demo_criterion" model="pmorg.success.criterion">
+        <field name="name">Concluzie confirmată și task operațional cu dovadă</field>
+        <field name="initiative_id" ref="pmorg_demo_initiative"/>
+    </record>
+
+    <record id="pmorg_demo_task_clarify" model="project.task">
+        <field name="name">Discută cu gestionarul despre incidentul XNX-001</field>
+        <field name="project_id" ref="pmorg_demo_project"/>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="pmorg_initiative_id" ref="pmorg_demo_initiative"/>
+        <field name="pmorg_task_type">clarification</field>
+        <field name="execution_mode">agent</field>
+        <field name="expected_outcome">Concluzie verificabilă privind cauza diferenței raportate</field>
+        <field name="participant_ids" eval="[(4, ref('pmorg_demo_partner_mihai'))]"/>
+    </record>
+
+    <record id="pmorg_demo_anchor_subject" model="pmorg.anchor">
+        <field name="task_id" ref="pmorg_demo_task_clarify"/>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="model_name">pmorg.initiative</field>
+        <field name="res_id" eval="ref('pmorg_demo_initiative')"/>
+        <field name="role">subject</field>
+    </record>
+
+    <record id="pmorg_demo_task_action" model="project.task">
+        <field name="name">Aplică acțiunea confirmată pentru XNX-001</field>
+        <field name="project_id" ref="pmorg_demo_project"/>
+        <field name="company_id" ref="pmorg_demo_company"/>
+        <field name="pmorg_initiative_id" ref="pmorg_demo_initiative"/>
+        <field name="pmorg_task_type">execution</field>
+        <field name="execution_mode">human</field>
+    </record>
+</odoo>

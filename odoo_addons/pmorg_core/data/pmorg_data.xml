@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="pmorg_initiative_seq" model="ir.sequence">
+            <field name="name">Secvență inițiativă PMORG</field>
+            <field name="code">pmorg.initiative</field>
+            <field name="prefix">PMORG-</field>
+            <field name="padding">4</field>
+        </record>
+    </data>
+</odoo>

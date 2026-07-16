@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pmorg_initiative_user,pmorg.initiative.user,model_pmorg_initiative,base.group_user,1,1,1,0
+access_pmorg_initiative_system,pmorg.initiative.system,model_pmorg_initiative,base.group_system,1,1,1,1
+access_pmorg_success_criterion_user,pmorg.success.criterion.user,model_pmorg_success_criterion,base.group_user,1,1,1,0
+access_pmorg_success_criterion_system,pmorg.success.criterion.system,model_pmorg_success_criterion,base.group_system,1,1,1,1
+access_pmorg_anchor_user,pmorg.anchor.user,model_pmorg_anchor,base.group_user,1,1,1,0
+access_pmorg_anchor_system,pmorg.anchor.system,model_pmorg_anchor,base.group_system,1,1,1,1

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="pmorg_root" name="PMORG" web_icon="pmorg_core,static/description/icon.svg" sequence="45"/>
+    <menuitem id="pmorg_initiative_menu" name="Initiatives" parent="pmorg_root" action="pmorg_initiative_action" sequence="10"/>
+    <menuitem id="pmorg_config_menu" name="Configuration" parent="pmorg_root" sequence="90"/>
+</odoo>
