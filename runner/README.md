@@ -1,6 +1,6 @@
 # Runner determinist PMORG (Gate C, parțial)
 
-Client pur al contractului [06-CONTRACTS](../docs/pmorg-v2/06-CONTRACTS.md):
+Client pur al contractului [07-CONTRACTS](../docs/pmorg-v2/07-CONTRACTS.md):
 fără reguli de business, fără LLM, fără canale reale. Politicile și
 tranzițiile trăiesc în Odoo.
 

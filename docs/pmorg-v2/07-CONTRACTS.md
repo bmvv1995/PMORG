@@ -47,6 +47,8 @@ Reguli:
 3. Rejucarea aceleiași `(actor.id, idempotency_key)` întoarce **răspunsul
    original memorat** din `pmorg.command.inbox`, fără efect nou.
 4. `actor` este identitatea tehnică; autoritatea se evaluează per comandă.
+5. Orice referință la o persoană sau un agent din `params` folosește ID-uri
+   `pmorg.identity` (ADR-014), niciodată partner/user/employee direct.
 
 ## 3. Răspunsul
 
@@ -142,7 +144,7 @@ Mutante (toate cer anvelopa completă):
 | `heartbeat` | `task_id`, `run_id`, `lease_token`, `extend_seconds?` | extinde lease-ul ownerului |
 | `release_task` | `task_id`, `run_id`, `lease_token`, `reason` | eliberare voluntară → `ready` |
 | `record_progress` | `task_id`, `run_id`, `lease_token`, `note` | progres; `claimed→running`, actualizează `last_progress_at` |
-| `record_waiting_response` | `task_id`, `run_id`, `lease_token`, `awaiting_partner_id`, `timeout_at` | → `waiting_response` |
+| `record_waiting_response` | `task_id`, `run_id`, `lease_token`, `awaiting_identity_id` (`pmorg.identity`, ADR-014), `timeout_at` | → `waiting_response` |
 | `schedule_next_check` | `task_id`, `run_id`, `lease_token`, `next_check_at`, `reason` | → `scheduled`, eliberează lease-ul |
 | `block_task` | `task_id`, `run_id`, `lease_token`, `reason` | → `blocked` |
 | `complete_run` | `task_id`, `run_id`, `lease_token`, `outcome` (`done`\|`failed`\|`needs_review`), `summary`, `evidence_refs?` | închide run-ul; `done` cere `expected_outcome` acoperit sau `evidence_refs` ⇒ altfel `E_CRITERIA` |
@@ -177,6 +179,13 @@ API-ul nu folosește ceasul serverului pentru decizii de scadență: `now` vine
 în `list_due_work`, `claim_task` (validarea scadenței) și `reclaim_expired`.
 Timestampurile de audit rămân pe ceasul serverului. Astfel timpul virtual al
 runnerului MVP conduce longitudinalitatea fără patch-uri.
+
+> **Reconciliere deschisă cu ADR-017 (Proposed):** în sandboxul de evaluare,
+> timpul autoritativ se rezolvă server-side dintr-un `tick_id` emis de ceasul
+> trusted; runtime-ul nu poate furniza un `now` autoritativ. Când ADR-017
+> devine `Accepted`, parametrul `now` din comenzile mutante se înlocuiește cu
+> `tick_id`, iar `now` client-side rămâne valid numai în afara harness-ului
+> de evaluare (dev local). Schimbarea este incompatibilă ⇒ contract `2.0`.
 
 ## 10. Ce nu face acest contract
 

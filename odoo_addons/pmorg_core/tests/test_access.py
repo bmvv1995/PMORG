@@ -7,6 +7,20 @@ class TestAccess(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = new_test_user(cls.env, login="pmorg_basic_user")
+        cls.env["pmorg.identity"].create(
+            {
+                "partner_id": cls.user.partner_id.id,
+                "user_id": cls.user.id,
+                "identity_kind": "human",
+            }
+        )
+        cls.env["pmorg.identity"].create(
+            {
+                "partner_id": cls.env.user.partner_id.id,
+                "user_id": cls.env.uid,
+                "identity_kind": "human",
+            }
+        )
 
     def test_internal_user_crud_no_unlink(self):
         Initiative = self.env["pmorg.initiative"].with_user(self.user)

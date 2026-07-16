@@ -11,6 +11,13 @@ class TestOrchestratorApi(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.api = cls.env["pmorg.orchestrator.api"]
+        cls.identity = cls.env["pmorg.identity"].create(
+            {
+                "partner_id": cls.env.user.partner_id.id,
+                "user_id": cls.env.uid,
+                "identity_kind": "human",
+            }
+        )
         cls.project = cls.env["project.project"].create({"name": "Proiect API"})
         cls.initiative = cls.env["pmorg.initiative"].create(
             {"name": "Inițiativă API", "project_id": cls.project.id}
@@ -81,10 +88,10 @@ class TestOrchestratorApi(TransactionCase):
 
         resp = self._call(
             "record_waiting_response",
-            dict(run_ref, awaiting_partner_id=self.env.user.partner_id.id),
+            dict(run_ref, awaiting_identity_id=self.identity.id),
         )
         self.assertEqual(self.task.orchestration_state, "waiting_response")
-        self.assertEqual(self.task.awaiting_response_from, self.env.user.partner_id)
+        self.assertEqual(self.task.awaiting_response_from, self.identity)
 
         resp = self._call("record_progress", dict(run_ref, note="a răspuns"))
         self.assertEqual(self.task.orchestration_state, "running")

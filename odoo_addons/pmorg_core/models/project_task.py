@@ -59,7 +59,7 @@ class ProjectTask(models.Model):
     )
     next_check_at = fields.Datetime(string="Următoarea verificare")
     awaiting_response_from = fields.Many2one(
-        "res.partner",
+        "pmorg.identity",
         string="Așteaptă răspuns de la",
     )
     awaiting_since = fields.Datetime(string="Așteaptă de la")
@@ -82,10 +82,10 @@ class ProjectTask(models.Model):
         string="Versiune stare", default=1, readonly=True, copy=False
     )
     participant_ids = fields.Many2many(
-        "res.partner",
+        "pmorg.identity",
         "pmorg_task_participant_rel",
         "task_id",
-        "partner_id",
+        "identity_id",
         string="Participanți",
     )
     anchor_ids = fields.One2many(

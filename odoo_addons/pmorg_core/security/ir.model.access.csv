@@ -1,4 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pmorg_identity_user,pmorg.identity.user,model_pmorg_identity,base.group_user,1,1,1,0
+access_pmorg_identity_system,pmorg.identity.system,model_pmorg_identity,base.group_system,1,1,1,1
 access_pmorg_initiative_user,pmorg.initiative.user,model_pmorg_initiative,base.group_user,1,1,1,0
 access_pmorg_initiative_system,pmorg.initiative.system,model_pmorg_initiative,base.group_system,1,1,1,1
 access_pmorg_success_criterion_user,pmorg.success.criterion.user,model_pmorg_success_criterion,base.group_user,1,1,1,0

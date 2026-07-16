@@ -7,6 +7,13 @@ class TestInitiative(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.project = cls.env["project.project"].create({"name": "Proiect test"})
+        cls.identity = cls.env["pmorg.identity"].create(
+            {
+                "partner_id": cls.env.user.partner_id.id,
+                "user_id": cls.env.uid,
+                "identity_kind": "human",
+            }
+        )
 
     def _make(self, **vals):
         base = {"name": "Inițiativă test", "project_id": self.project.id}
@@ -20,6 +27,7 @@ class TestInitiative(TransactionCase):
         self.assertEqual(init.state, "draft")
         self.assertEqual(init.state_version, 1)
         self.assertEqual(init.company_id, self.env.company)
+        self.assertEqual(init.owner_identity_id, self.identity)
 
     def test_task_links_to_initiative(self):
         init = self._make()

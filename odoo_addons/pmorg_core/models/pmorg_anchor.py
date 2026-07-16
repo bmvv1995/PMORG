@@ -42,13 +42,10 @@ class PmorgAnchor(models.Model):
     note = fields.Char(string="Notă")
     name = fields.Char(compute="_compute_name")
 
-    _sql_constraints = [
-        (
-            "anchor_unique",
-            "unique(task_id, model_name, res_id, role)",
-            "Ancora există deja pe acest task cu același rol.",
-        ),
-    ]
+    _anchor_unique = models.Constraint(
+        "UNIQUE (task_id, model_name, res_id, role)",
+        "Ancora există deja pe acest task cu același rol.",
+    )
 
     @api.depends("model_name", "res_id", "role")
     def _compute_name(self):

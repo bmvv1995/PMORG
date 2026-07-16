@@ -388,9 +388,12 @@ class PmorgOrchestratorApi(models.AbstractModel):
             raise ApiError(
                 "E_STATE", f"Tranziție invalidă din {task.orchestration_state}."
             )
-        partner_id = params.get("awaiting_partner_id")
-        if not partner_id:
-            raise ApiError("E_SCHEMA", "awaiting_partner_id lipsă.")
+        identity_id = params.get("awaiting_identity_id")
+        if not identity_id:
+            raise ApiError("E_SCHEMA", "awaiting_identity_id lipsă.")
+        identity = self.env["pmorg.identity"].browse(int(identity_id))
+        if not identity.exists():
+            raise ApiError("E_UNKNOWN", f"Identitate inexistentă: {identity_id}.")
         self._transition(
             task,
             "waiting_response",
@@ -398,7 +401,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
             envelope,
             run=run,
             extra={
-                "awaiting_response_from": int(partner_id),
+                "awaiting_response_from": identity.id,
                 "awaiting_since": now,
             },
         )

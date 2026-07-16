@@ -80,9 +80,9 @@ class PmorgOutboxEvent(models.Model):
     event_type = fields.Char(required=True, index=True)
     payload = fields.Json()
 
-    _sql_constraints = [
-        ("message_id_unique", "unique(message_id)", "message_id trebuie să fie unic."),
-    ]
+    _message_id_unique = models.Constraint(
+        "UNIQUE (message_id)", "message_id trebuie să fie unic."
+    )
 
 
 class PmorgCommandInbox(models.Model):
@@ -97,10 +97,7 @@ class PmorgCommandInbox(models.Model):
     command = fields.Char(required=True)
     response = fields.Json()
 
-    _sql_constraints = [
-        (
-            "actor_key_unique",
-            "unique(actor_id, idempotency_key)",
-            "Cheia de idempotency există deja pentru acest actor.",
-        ),
-    ]
+    _actor_key_unique = models.Constraint(
+        "UNIQUE (actor_id, idempotency_key)",
+        "Cheia de idempotency există deja pentru acest actor.",
+    )

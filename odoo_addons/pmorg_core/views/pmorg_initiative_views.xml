@@ -23,7 +23,7 @@
                     </div>
                     <group>
                         <group>
-                            <field name="owner_id"/>
+                            <field name="owner_identity_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="priority" widget="priority"/>
                             <field name="project_id"/>
@@ -77,7 +77,7 @@
         <field name="arch" type="xml">
             <list string="Initiatives" decoration-success="state in ('verifying', 'closed')" decoration-warning="state == 'active'" decoration-danger="state == 'cancelled'" decoration-info="state == 'clarifying'">
                 <field name="name"/>
-                <field name="owner_id" widget="many2one_avatar_user"/>
+                <field name="owner_identity_id"/>
                 <field name="priority" widget="priority"/>
                 <field name="state" widget="badge" decoration-success="state in ('verifying', 'closed')" decoration-warning="state == 'active'" decoration-info="state == 'clarifying'" decoration-danger="state == 'cancelled'"/>
                 <field name="task_count"/>
@@ -97,7 +97,7 @@
                 <field name="name"/>
                 <field name="state"/>
                 <field name="priority"/>
-                <field name="owner_id"/>
+                <field name="owner_identity_id"/>
                 <field name="task_count"/>
                 <templates>
                     <t t-name="card">
@@ -116,7 +116,7 @@
                             <span>Tasks: <field name="task_count"/></span>
                         </div>
                         <div>
-                            <field name="owner_id" widget="many2one_avatar_user"/>
+                            <field name="owner_identity_id"/>
                         </div>
                     </t>
                 </templates>
@@ -132,7 +132,7 @@
             <search string="Search Initiatives">
                 <field name="name"/>
                 <field name="objective"/>
-                <field name="owner_id"/>
+                <field name="owner_identity_id"/>
                 <separator/>
                 <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Active" name="active" domain="[('state', '=', 'active')]"/>
@@ -144,7 +144,7 @@
                 <separator/>
                 <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
                 <filter string="Priority" name="group_priority" context="{'group_by': 'priority'}"/>
-                <filter string="Owner" name="group_owner" context="{'group_by': 'owner_id'}"/>
+                <filter string="Owner" name="group_owner" context="{'group_by': 'owner_identity_id'}"/>
             </search>
         </field>
     </record>

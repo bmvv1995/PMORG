@@ -1,0 +1,36 @@
+# Profilul organizațional minimal (ADR-013, 04-NEXT-SESSION §4).
+# Manifest de date/configurație — NU manifest alternativ de addon.
+# Profilurile paralele (servicii, distribuție) îl completează prin fișiere
+# proprii, fără schimbarea pmorg_core/__manifest__.py.
+
+profile_id: org-min
+suite_version: "0.3"
+
+baseline:
+  odoo_edition: community
+  odoo_revision: 1b8f6802832cfa4d146193a912af1f4445d09f0a
+  modules:
+    - base
+    - project
+
+# Profilul minimal nu activează niciun pack opțional.
+anchor_packs: []
+worldgen_packs: []
+
+policies: {}
+
+fixtures:
+  demo_module: pmorg_core
+  world: atelier-minimal
+  company: Atelier Minimal Test SRL
+  identities:
+    owner: pmorg_core.pmorg_demo_identity_ana
+    validator: pmorg_core.pmorg_demo_identity_paul
+    participant: pmorg_core.pmorg_demo_identity_victor
+    agent: pmorg_core.pmorg_demo_identity_agent
+
+# Absențe verificate explicit de suita de conformitate (02-MVP §4.2):
+forbidden_modules:
+  - hr
+  - stock
+  - hr_holidays

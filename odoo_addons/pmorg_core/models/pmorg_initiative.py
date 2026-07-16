@@ -22,11 +22,11 @@ class PmorgInitiative(models.Model):
         default=lambda self: self.env.company,
         tracking=True,
     )
-    owner_id = fields.Many2one(
-        "res.users",
+    owner_identity_id = fields.Many2one(
+        "pmorg.identity",
         string="Owner",
         required=True,
-        default=lambda self: self.env.user,
+        default=lambda self: self._default_owner_identity(),
         tracking=True,
     )
     description = fields.Text(string="Descriere / context")
@@ -100,6 +100,15 @@ class PmorgInitiative(models.Model):
         string="Status verificare",
     )
     close_date = fields.Datetime(string="Data închiderii", readonly=True, copy=False)
+
+    def _default_owner_identity(self):
+        return self.env["pmorg.identity"].search(
+            [
+                ("user_id", "=", self.env.uid),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
 
     @api.depends("task_ids")
     def _compute_task_count(self):

@@ -42,16 +42,16 @@ def main():
     api = OdooApiClient(args.url, args.db, args.login, args.password)
     channel = SimulatedChannel(
         {
-            "mihai.stan": [
-                "Am găsit două cutii lăsate separat și nu am actualizat "
-                "situația în sistem."
+            "victor.neagu": [
+                "Criteriul de acceptare e livrarea validată de Paul, "
+                "până vineri. Nu l-am trecut nicăieri în scris."
             ]
         }
     )
 
     # -- 1–2. Mara creează inițiativa, obiectivul și criteriul (rol uman) ----
     company = api.execute(
-        "res.company", "search", [["name", "=", "Delta Distribution Test SRL"]]
+        "res.company", "search", [["name", "=", "Atelier Minimal Test SRL"]]
     )
     check("Compania sintetică există (demo încărcat)", company)
     # Fixture: operatorul uman primește acces la compania sintetică
@@ -59,24 +59,28 @@ def main():
     api.execute("res.users", "write", [api.uid], {"company_ids": [(4, company[0])]})
     project = api.execute(
         "project.project", "search",
-        [["name", "=", "Clarificări operaționale — TEST"]],
+        [["name", "=", "Coordonare internă — TEST"]],
     )
-    mihai = api.execute(
-        "res.partner", "search", [["name", "=", "Mihai Stan"]], limit=1
+    victor = api.execute(
+        "pmorg.identity", "search", [["name", "=", "Victor Neagu"]], limit=1
+    )
+    owner = api.execute(
+        "pmorg.identity", "search", [["name", "=", "Ana Dobre"]], limit=1
     )
     initiative_id = api.execute(
         "pmorg.initiative", "create",
         {
-            "name": "XNX-001 — smoke run",
-            "objective": "Stabilirea cauzei diferenței și a acțiunii necesare",
+            "name": "MIN-001 — smoke run",
+            "objective": "Stabilirea criteriului de acceptare și finalizarea livrabilului",
             "project_id": project[0],
             "company_id": company[0],
+            "owner_identity_id": owner[0],
         },
     )
     criterion_id = api.execute(
         "pmorg.success.criterion", "create",
         {
-            "name": "Concluzie confirmată și task operațional cu dovadă",
+            "name": "Criteriu confirmat și livrabil finalizat cu dovadă",
             "initiative_id": initiative_id,
         },
     )
@@ -87,11 +91,11 @@ def main():
         "propose_task",
         {
             "initiative_id": initiative_id,
-            "name": "Discută cu gestionarul despre incidentul XNX-001 (smoke)",
+            "name": "Obține criteriul de acceptare lipsă (smoke)",
             "pmorg_task_type": "clarification",
             "execution_mode": "agent",
-            "expected_outcome": "Concluzie verificabilă privind cauza",
-            "participant_ids": mihai,
+            "expected_outcome": "Criteriu de acceptare explicit, confirmat",
+            "participant_ids": victor,
         },
         clock.now,
     )
@@ -131,13 +135,13 @@ def main():
     # -- 5. Canalul simulat: întrebare + așteptare + răspuns scriptat --------
     get_result(api.call("record_progress", dict(run_ref, note="contact inițial"),
                         clock.now), "record_progress")
-    channel.send_message("mihai.stan",
-                         "Bună, poți clarifica incidentul XNX-001?",
+    channel.send_message("victor.neagu",
+                         "Bună, care e criteriul de acceptare pentru MIN-001?",
                          "smoke-XNX-001", clock.now)
     get_result(
         api.call(
             "record_waiting_response",
-            dict(run_ref, awaiting_partner_id=mihai[0]),
+            dict(run_ref, awaiting_identity_id=victor[0]),
             clock.now,
         ),
         "record_waiting_response",
@@ -169,9 +173,9 @@ def main():
         "schedule_next_check",
     )
     clock.advance(hours=2)
-    reply = channel.receive_reply("mihai.stan", "smoke-XNX-001", clock.now)
+    reply = channel.receive_reply("victor.neagu", "smoke-XNX-001", clock.now)
     check("Pas 5: răspuns scriptat primit, identitate structurală",
-          reply and reply["verified_sender_identity"] == "mihai.stan")
+          reply and reply["verified_sender_identity"] == "victor.neagu")
 
     # Revendicare nouă la scadență (run #2 pe același task — 01-ARCH §4.2).
     claim2 = get_result(
@@ -208,7 +212,7 @@ def main():
     done = api.call(
         "complete_run",
         dict(run_ref, outcome="done",
-             summary="Cauza: două cutii neoperate în sistem",
+             summary="Criteriul: livrare validată de Paul până vineri",
              evidence_refs=[evidence_ref]),
         clock.now,
     )
@@ -225,7 +229,7 @@ def main():
             "propose_task",
             {
                 "initiative_id": initiative_id,
-                "name": "Aplică acțiunea confirmată pentru XNX-001 (smoke)",
+                "name": "Finalizează livrabilul conform criteriului confirmat (smoke)",
                 "pmorg_task_type": "execution",
                 "execution_mode": "human",
             },
@@ -250,7 +254,7 @@ def main():
     get_result(
         api.call(
             "complete_run",
-            dict(op_ref, outcome="done", summary="Situația operată în sistem",
+            dict(op_ref, outcome="done", summary="Livrabil finalizat conform criteriului",
                  evidence_refs=["mem://evidence/TEST-EVID-XNX-001"]),
             clock.now,
         ),
