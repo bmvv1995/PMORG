@@ -2,20 +2,19 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Propunere canonică pentru revizuire |
+| Status | Aprobat — ADR-001–012 normative (2026-07-16) |
 | Versiune | 0.1 |
 | Data | 2026-07-16 |
 | Domeniu | Produsul PMORG v2 și MVP-ul inițial |
 
 O decizie `Accepted` este normativă. Schimbarea ei necesită un ADR nou care o
 marchează explicit `Superseded`. `Proposed` indică o decizie formulată, dar
-neaprobată încă. La această revizie, toate ADR-urile rămân `Proposed` până la
-aprobarea explicită a suitei de documente v2; nu se implementează ca și cum ar
-fi deja normative.
+neaprobată încă. Suita de documente v2 a fost aprobată explicit de owner la
+2026-07-16; ADR-001–012 au statutul `Accepted` și sunt normative.
 
 ## ADR-001 — PMORG este Odoo-first
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** PMORG este o aplicație Odoo. Odoo este ancora ontologică și
 registrul stării formale curente; nu păstrăm o abstracție ERP generică în
@@ -27,7 +26,7 @@ prima versiune. Baseline-ul MVP este Odoo 19 Community.
 
 ## ADR-002 — Ontologia se extinde prin anchor packs
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** PMORG folosește numai entitățile de business de prim nivel din module instalate, configurate și accesibile, prin anchor packs versionate. Discovery-ul și mapările standard cunoscute sunt deterministe; o mapare custom necunoscută necesită aprobare.
 
@@ -37,7 +36,7 @@ prima versiune. Baseline-ul MVP este Odoo 19 Community.
 
 ## ADR-003 — `project.task` este Kanbanul canonic
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** PMORG extinde `project.task` pentru taskuri umane, agentice, hibride și de monitorizare, inclusiv clarificare, follow-up, confirmare, escaladare și verificare. Pașii tehnici efemeri rămân execuții sau evenimente, nu taskuri organizaționale.
 
@@ -47,7 +46,7 @@ prima versiune. Baseline-ul MVP este Odoo 19 Community.
 
 ## ADR-004 — Odoo este control plane; runtime-ul și memoria sunt externe
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** Odoo păstrează starea formală, politicile, aprobările, UI-ul și auditul. Runtime-ul extern operează taskurile. Memoria externă păstrează evidențe, claims, proveniență, temporalitate și istorie și este accesată prin MCP.
 
@@ -57,7 +56,7 @@ prima versiune. Baseline-ul MVP este Odoo 19 Community.
 
 ## ADR-005 — Admiterea în memorie este validată
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** fluxul este `evidență -> candidat -> memorie validată -> formalizare Odoo`, atunci când apare un efect operațional. Validarea include identitate, proveniență, autoritate, contradicție, valabilitate temporală, confirmare și supersession.
 
@@ -67,7 +66,7 @@ prima versiune. Baseline-ul MVP este Odoo 19 Community.
 
 ## ADR-006 — Scrierile agentice sunt comenzi controlate
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** PMORG expune exclusiv suprafața de comenzi versionată în
 `01-ARCHITECTURE.md`, secțiunea „Contractele Odoo, evenimente și canale”.
@@ -82,7 +81,7 @@ audit.
 
 ## ADR-007 — Longitudinalitatea folosește stare persistentă și controller-e
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** obligațiile, așteptările, politica și `next_check_at` sunt persistate în Odoo. Controller-ele se activează periodic sau la evenimente, reconstruiesc contextul din Odoo și memorie, execută un pas idempotent și programează următoarea verificare. Regulile obiective sunt deterministe; LLM-ul interpretează.
 
@@ -92,7 +91,7 @@ audit.
 
 ## ADR-008 — Hermes este candidatul de runtime, nu o condiție a MVP-ului
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** MVP-ul folosește un runner determinist care implementează contractul final al orchestratorului. Hermes este integrat ulterior și trebuie să treacă aceleași teste de contract și scenarii longitudinale.
 
@@ -102,7 +101,7 @@ audit.
 
 ## ADR-009 — MVP-ul construiește real Odoo și memoria
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** aplicația Odoo PMORG și memoria prin MCP sunt implementări reale, cu scop restrâns. Orchestrarea, timpul și comunicarea sunt simulate prin adaptoare care respectă contractele finale. Agentul și răspunsurile sunt întâi deterministe; un AI real se adaugă după smoke test.
 
@@ -112,7 +111,7 @@ audit.
 
 ## ADR-010 — Zero teste în producție
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** În toate fazele, orice test, benchmark, calificare sau validare
 rulează exclusiv în medii separate de producție, cu baze, servicii,
@@ -130,7 +129,7 @@ pilotului și nu este numită sau folosită drept test.
 
 ## ADR-011 — Produs unic, implementare modulară
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** PMORG este o singură aplicație pentru utilizator, dar poate fi o suită de addon-uri: nucleu, Project, runtime, memorie și anchor packs.
 
@@ -140,7 +139,7 @@ pilotului și nu este numită sau folosită drept test.
 
 ## ADR-012 — Self-hosting-ul LLM nu este garanție de confidențialitate
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-16)
 
 **Decizie:** arhitectura nu impune un LLM self-hosted ca premisă sau garanție. Confidențialitatea se tratează prin acces minim, politici, audit, contracte de date și evaluarea furnizorului.
 

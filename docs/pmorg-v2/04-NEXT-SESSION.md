@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Pregătit pentru execuție după aprobarea documentelor v2 |
+| Status | Pregătit pentru execuție — suita v2 aprobată la 2026-07-16 |
 | Data | 2026-07-16 |
 | Obiectiv | Scheletul instalabil al aplicației și prima felie de date/teste |
 

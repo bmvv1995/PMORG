@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Propunere canonică pentru revizuire |
+| Status | Aprobat — canonic (2026-07-16) |
 | Versiune | 0.1 |
 | Data | 2026-07-16 |
 | Baseline MVP | Odoo 19 Community |
