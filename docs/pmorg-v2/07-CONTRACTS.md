@@ -1,8 +1,8 @@
-# PMORG — contractele orchestrator ↔ Odoo (v1.0-draft)
+# PMORG — contractele orchestrator ↔ Odoo (v1.0)
 
 | Câmp | Valoare |
 |---|---|
-| Status | Propus spre înghețare — decis sub mandat, de evaluat de owner |
+| Status | Înghețat v1.0 (2026-07-17, sub mandat delegat) |
 | Versiune contract | `1.0` |
 | Data | 2026-07-16 |
 | Domeniu | Suprafața de comenzi, anvelopa, stările de orchestrare, outbox/inbox, erori |
