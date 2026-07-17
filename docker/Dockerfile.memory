@@ -1,0 +1,5 @@
+# Adaptorul de memorie pmorg-memory/1.0 peste nucleul aipm (S3).
+FROM python:3.12-slim
+COPY aipm/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+# codul aipm se montează la runtime: ./aipm -> /mnt/repo/aipm (PYTHONPATH=/mnt/repo)

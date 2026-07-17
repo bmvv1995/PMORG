@@ -23,10 +23,13 @@ class OdooApiClient:
             f"{url}/xmlrpc/2/object", allow_none=True
         )
         self._idem_counter = 0
+        # nonce per proces: cheile rămân stabile ÎN interiorul unei rulări
+        # (replay intenționat), dar nu se ciocnesc între rulări pe aceeași bază
+        self._run_nonce = uuid.uuid4().hex[:8]
 
     def next_key(self, label):
         self._idem_counter += 1
-        return f"{self.actor_id}:{label}:{self._idem_counter}"
+        return f"{self.actor_id}:{self._run_nonce}:{label}:{self._idem_counter}"
 
     def call(self, command, params, now, key=None, correlation_id=None):
         payload = {

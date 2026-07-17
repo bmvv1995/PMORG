@@ -194,3 +194,30 @@ runnerului MVP conduce longitudinalitatea fără patch-uri.
 - nu decide autonomie — poarta refuză, nu negociază (`E_AUTONOMY`);
 - nu garantează exactly-once între sisteme: garantează idempotency la
   graniță și outbox at-least-once, conform 01-ARCHITECTURE §9.
+
+## Anexa A — contractul memoriei `pmorg-memory/1.0` (închide întrebarea deschisă #4)
+
+**Handshake-ul de capability registry (normativ):** runnerul/agentul obține
+descriptorul din Odoo (`get_capability_registry` → tipuri + fingerprint
+SHA-256 al registry-ului canonic), apoi apelează `memory_negotiate_registry
+(profile_id, expected_fingerprint)` înaintea oricărei operații. Serviciul de
+memorie își construiește vocabularul din inventarul guvernat `anchor_type`
+(migrări, nu runtime) filtrat pe profil; profil sau fingerprint diferit ⇒
+`MEM_REGISTRY_MISMATCH`, fail-closed. Un tip cerut de profil dar absent din
+inventar oprește serviciul la boot.
+
+**Codurile de eroare:** `MEM_CONTRACT`, `MEM_SCHEMA`, `MEM_UNKNOWN`,
+`MEM_STATE`, `MEM_REGISTRY_MISMATCH`, `MEM_ANCHOR_TYPE_UNKNOWN`,
+`MEM_NOT_AUTHORIZED`, `MEM_SELF_VALIDATION`, `MEM_HASH_MISMATCH`,
+`MEM_INTERNAL`.
+
+**Controlul de acces:** o instanță de serviciu = un (profil, namespace,
+run); publicare exclusiv pe loopback; PG host allow-listed; validatori din
+politica profilului (env explicit), niciodată din payload; nicio operație de
+ștergere în suprafață.
+
+**Indisponibilitatea memoriei (comportamentul clientului):** regulile pur
+deterministe ale orchestrării continuă (Odoo e autonom — ADR-004); efectele
+care cer memoria intră `memory_pending` și se reiau cu același `external_id`
+/ aceleași chei — dedup-ul pe `(namespace, external_id)` face retry-ul sigur.
+Serviciul nu răspunde niciodată parțial: o eroare e o eroare, nu date goale.

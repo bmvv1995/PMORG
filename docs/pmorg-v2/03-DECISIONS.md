@@ -290,9 +290,9 @@ provider drept sursă canonică.
 2. Mașina de stare agentică și relația cu stage-urile Odoo.
 3. Semnăturile, payload-urile și codurile de eroare exacte pentru API-ul de
    orchestrare deja delimitat.
-4. Forma exactă și statutul normativ al handshake-ului de capability registry
-   propus în arhitectură, apoi payload-urile, codurile de eroare, controlul de
-   acces MCP și comportamentul la indisponibilitatea memoriei.
+4. ~~Handshake-ul de capability registry, payload-urile, codurile de eroare,
+   controlul de acces MCP și indisponibilitatea memoriei~~ — închisă prin
+   Anexa A din `07-CONTRACTS.md` (2026-07-18, S3).
 5. Extinderea ulterioară a pack-urilor HR și Inventory dincolo de subsetul
    minim fixat pentru MVP, fără mutarea dependențelor în nucleu.
 6. Matricea inițială de autonomie și aprobări.
