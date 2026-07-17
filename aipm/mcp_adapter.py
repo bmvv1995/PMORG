@@ -26,7 +26,7 @@ CONTRACT = "pmorg-memory/1.0"
 PROFILE_TYPES = {
     "org-min": ["COMPANY", "PROJECT", "TASK", "INITIATIVE", "IDENTITY"],
     "org-services": ["COMPANY", "PROJECT", "TASK", "INITIATIVE", "IDENTITY",
-                     "EMPLOYEE", "DEPARTMENT"],
+                     "EMPLOYEE", "DEPARTMENT", "LEAVE_REQUEST"],
     "org-distribution": ["COMPANY", "PROJECT", "TASK", "INITIATIVE", "IDENTITY",
                          "EMPLOYEE", "DEPARTMENT",
                          "INVENTORY_TRANSFER", "INVENTORY_MOVE"],
@@ -36,6 +36,7 @@ PROFILE_TYPES = {
 # doar dacă există în anchor_type; excepțiile declarate aici sunt tolerate cu
 # modelul din harta v2, până la migrația care le adaugă în inventar.
 V2_ONLY_TYPES = {
+    "LEAVE_REQUEST": "hr.leave",
     "EMPLOYEE": "hr.employee",
     "DEPARTMENT": "hr.department",
     "INVENTORY_TRANSFER": "stock.picking",

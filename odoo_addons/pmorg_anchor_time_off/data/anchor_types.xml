@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="anchor_type_leave" model="pmorg.anchor.type">
+            <field name="code">LEAVE_REQUEST</field><field name="model_name">hr.leave</field><field name="pack">pmorg_anchor_time_off</field>
+        </record>
+    </data>
+</odoo>

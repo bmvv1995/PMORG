@@ -417,6 +417,37 @@ class PmorgOrchestratorApi(models.AbstractModel):
         })
         return {"tick_id": tick.tick_id, "seq": tick.seq}
 
+    def _cmd_record_escalation(self, envelope, params):
+        task = self._get_task(params)
+        now = self._resolve_now(envelope, params)
+        run = self._get_run(task, params, now)
+        if not params.get("reason"):
+            raise ApiError("E_SCHEMA", "Escaladarea cere un motiv explicit.")
+        task.write({
+            "escalation_level": task.escalation_level + 1,
+            "last_intervention_at": now,
+            "state_version": task.state_version + 1,
+        })
+        self._emit(task, "task.escalated", envelope, run=run,
+                   data={"level": task.escalation_level,
+                         "reason": params["reason"]})
+        return {"task_id": task.id, "escalation_level": task.escalation_level,
+                "state_version": task.state_version}
+
+    def _cmd_record_followup(self, envelope, params):
+        task = self._get_task(params)
+        now = self._resolve_now(envelope, params)
+        run = self._get_run(task, params, now)
+        task.write({
+            "followup_count": task.followup_count + 1,
+            "last_intervention_at": now,
+            "state_version": task.state_version + 1,
+        })
+        self._emit(task, "task.followup", envelope, run=run,
+                   data={"count": task.followup_count,
+                         "note": params.get("note") or ""})
+        return {"task_id": task.id, "followup_count": task.followup_count}
+
     def _cmd_list_outbox(self, envelope, params):
         after = int(params.get("after_id") or 0)
         limit = int(params.get("limit") or 100)
