@@ -13,6 +13,7 @@ import sys
 from pmorg_runner.channel import SimulatedChannel
 from pmorg_runner.client import OdooApiClient
 from pmorg_runner.clock import VirtualClock
+from pmorg_runner.memory_client import MemoryClient
 
 CHECKS = []
 
@@ -36,6 +37,7 @@ def main():
     parser.add_argument("--db", default="pmorg_smoke")
     parser.add_argument("--login", default="admin")
     parser.add_argument("--password", default="admin")
+    parser.add_argument("--memory-url", default="http://127.0.0.1:18091")
     args = parser.parse_args()
 
     clock = VirtualClock("2026-07-16 08:00:00")
@@ -188,8 +190,96 @@ def main():
         "lease_token": claim2["lease_token"],
     }
 
-    # -- 6–7. Evidența răspunsului (STUB memorie — Gate B) -------------------
-    evidence_ref = f"mem://evidence/{reply['content_hash'][:16]}"
+    # -- 6–8. Memoria REALĂ prin contract (Gate B) ----------------------------
+    mem = MemoryClient(args.memory_url)
+    reg = mem.ok("memory_negotiate_registry", profile_id="org-min")
+    check("Gate B: registry negociat (org-min, INITIATIVE în vocabular)",
+          "INITIATIVE" in reg["anchor_types"])
+    check("Gate B: profil străin refuzat fail-closed (MEM_REGISTRY_MISMATCH)",
+          mem.expect_error("memory_negotiate_registry",
+                           "MEM_REGISTRY_MISMATCH", profile_id="org-distrib"))
+
+    victor_ref = "pmorg_core.pmorg_demo_identity_victor"
+    paul_ref = "pmorg_core.pmorg_demo_identity_paul"
+    ana_ref = "pmorg_core.pmorg_demo_identity_ana"
+
+    ev = mem.ok(
+        "memory_capture_evidence",
+        external_id=reply["external_message_id"],
+        source="channel:simulated",
+        author_ref=victor_ref,
+        content=reply["body"],
+        content_hash=reply["content_hash"],
+        correlation_id=reply["correlation_id"],
+        received_at=reply["received_at"],
+    )
+    ev_replay = mem.ok(
+        "memory_capture_evidence",
+        external_id=reply["external_message_id"],
+        source="channel:simulated",
+        author_ref=victor_ref,
+        content=reply["body"],
+    )
+    check("Pas 6: evidența persistă în memoria reală, dedup pe ID extern",
+          ev["evidence_id"] == ev_replay["evidence_id"] and ev_replay["replayed"])
+
+    anchors = [
+        {"anchor_type": "INITIATIVE", "model": "pmorg.initiative",
+         "res_id": initiative_id, "role": "subject"},
+        {"anchor_type": "TASK", "model": "project.task",
+         "res_id": task_id, "role": "mentions"},
+        {"anchor_type": "IDENTITY", "model": "pmorg.identity",
+         "res_id": victor[0], "role": "mentions"},
+    ]
+    cl = mem.ok(
+        "memory_propose_claim",
+        statement="Criteriul de acceptare MIN-001: livrare validată de Paul, "
+                  "termen vineri",
+        author_ref=victor_ref,
+        evidence_ids=[ev["evidence_id"]],
+        anchors=anchors,
+    )
+    check("Pas 7: claim candidat, ancorat la inițiativă/task/identitate",
+          cl["status"] == "candidate")
+    check("Gate B: ancoră în afara registry-ului refuzată (hr.leave)",
+          mem.expect_error("memory_propose_claim", "MEM_ANCHOR_TYPE_UNKNOWN",
+                           statement="x", author_ref=victor_ref,
+                           evidence_ids=[ev["evidence_id"]],
+                           anchors=[{"anchor_type": "LEAVE_REQUEST",
+                                     "model": "hr.leave", "res_id": 1}]))
+
+    report = mem.ok(
+        "memory_capture_evidence",
+        external_id="TEST-EVID-MIN-001",
+        source="report:synthetic",
+        author_ref=ana_ref,
+        content="Raport de verificare MIN-001: criteriul confirmat în "
+                "ședința operațională, autor independent.",
+    )
+    check("Pas 8a: validator neautorizat refuzat (MEM_NOT_AUTHORIZED)",
+          mem.expect_error("memory_validate_claim", "MEM_NOT_AUTHORIZED",
+                           claim_id=cl["claim_id"], validator_ref=victor_ref,
+                           supporting_evidence_id=report["evidence_id"]))
+    check("Pas 8b: dovadă neindependentă refuzată (MEM_SELF_VALIDATION)",
+          mem.expect_error("memory_validate_claim", "MEM_SELF_VALIDATION",
+                           claim_id=cl["claim_id"], validator_ref=paul_ref,
+                           supporting_evidence_id=ev["evidence_id"]))
+    check("Pas 8c: hash greșit al dovezii refuzat (MEM_HASH_MISMATCH)",
+          mem.expect_error("memory_validate_claim", "MEM_HASH_MISMATCH",
+                           claim_id=cl["claim_id"], validator_ref=paul_ref,
+                           supporting_evidence_id=report["evidence_id"],
+                           expected_content_hash="deadbeef"))
+    validated = mem.ok(
+        "memory_validate_claim",
+        claim_id=cl["claim_id"],
+        validator_ref=paul_ref,
+        supporting_evidence_id=report["evidence_id"],
+        expected_content_hash=report["content_hash"],
+    )
+    check("Pas 8d: claim validat de validatorul autorizat, cu dovadă și hash",
+          validated["status"] == "validated")
+
+    evidence_ref = "mem://{}/evidence/{}".format(reg["namespace"], ev["evidence_id"])
     get_result(
         api.call(
             "record_evidence_reference",
@@ -197,13 +287,12 @@ def main():
                 "task_id": task_id,
                 "memory_ref": evidence_ref,
                 "kind": "conversation_reply",
-                "note": "STUB Gate B: va deveni memory_capture_evidence prin MCP",
+                "note": "claim {} validat în memoria reală".format(cl["claim_id"]),
             },
             clock.now,
         ),
         "record_evidence_reference",
     )
-    check("Pas 6–7 (STUB): evidența referențiată la nivel de contract", True)
 
     # -- Reluare + finalizare run clarificare --------------------------------
     get_result(api.call("record_progress",
@@ -255,7 +344,7 @@ def main():
         api.call(
             "complete_run",
             dict(op_ref, outcome="done", summary="Livrabil finalizat conform criteriului",
-                 evidence_refs=["mem://evidence/TEST-EVID-XNX-001"]),
+                 evidence_refs=["mem://{}/evidence/{}".format(reg["namespace"], report["evidence_id"])]),
             clock.now,
         ),
         "complete op",
@@ -294,11 +383,42 @@ def main():
         f"lipsesc: {[t for t in expected_chain if t not in types]}",
     )
 
+    # -- Memoria după închidere: outcome, recall, supersession ----------------
+    outcome = mem.ok(
+        "memory_record_outcome",
+        task_ref="project.task:{}".format(op["task_id"]),
+        claim_id=cl["claim_id"],
+        summary="Livrabil finalizat conform criteriului validat",
+        evidence_ids=[report["evidence_id"]],
+    )
+    recall = mem.ok("memory_recall", anchor=anchors[0])
+    labels = {c["id"]: c["epistemic_label"] for c in recall["claims"]}
+    check("Gate B: recall pe ancora inițiativei — claim etichetat validated",
+          labels.get(cl["claim_id"]) == "validated")
+
+    cl2 = mem.ok(
+        "memory_propose_claim",
+        statement="Corecție: termenul criteriului devine luni, nu vineri",
+        author_ref=ana_ref,
+        evidence_ids=[report["evidence_id"]],
+        anchors=[anchors[0]],
+    )
+    mem.ok("memory_supersede", old_claim_id=cl["claim_id"],
+           new_claim_id=cl2["claim_id"], reason="termen renegociat")
+    recall2 = mem.ok("memory_recall", anchor=anchors[0])
+    st = {c["id"]: c["status"] for c in recall2["claims"]}
+    check("Gate B: supersession fără ștergere — vechiul claim rămâne, marcat",
+          st.get(cl["claim_id"]) == "superseded"
+          and st.get(cl2["claim_id"]) == "candidate")
+    timeline = mem.ok("memory_get_timeline", anchor=anchors[0])
+    check("Gate B: timeline-ul memoriei conține claim + outcome, ordonat",
+          len(timeline["events"]) >= 3 and bool(outcome["outcome_id"]))
+
     # -- Raport ---------------------------------------------------------------
     failed = [c for c in CHECKS if not c[1]]
     print("\n===== RAPORT SMOKE =====")
     print(f"{len(CHECKS)} verificări, {len(failed)} eșuate")
-    print("Limitare asumată: pașii de memorie (6–8) sunt STUB până la Gate B.")
+    print("Gate B integrat: memoria reală prin contract pmorg-memory/1.0.")
     sys.exit(1 if failed else 0)
 
 
