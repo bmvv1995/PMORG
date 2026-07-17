@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="anchor_type_transfer" model="pmorg.anchor.type">
+            <field name="code">INVENTORY_TRANSFER</field><field name="model_name">stock.picking</field><field name="pack">pmorg_anchor_inventory</field>
+        </record>
+        <record id="anchor_type_move" model="pmorg.anchor.type">
+            <field name="code">INVENTORY_MOVE</field><field name="model_name">stock.move</field><field name="pack">pmorg_anchor_inventory</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="world_company" model="res.company"><field name="name">Birou Servicii Test SRL</field></record>
+    <record id="partner_elena" model="res.partner"><field name="name">Elena Marin</field><field name="company_id" ref="world_company"/><field name="email">elena.marin@birou-srv.example</field></record>
+    <record id="partner_dan" model="res.partner"><field name="name">Dan Petre</field><field name="company_id" ref="world_company"/><field name="email">dan.petre@birou-srv.example</field></record>
+    <record id="partner_ioana" model="res.partner"><field name="name">Ioana Sava</field><field name="company_id" ref="world_company"/><field name="email">ioana.sava@birou-srv.example</field></record>
+    <record id="user_elena" model="res.users">
+        <field name="login">elena.marin@birou-srv.example</field>
+        <field name="partner_id" ref="partner_elena"/>
+        <field name="company_id" ref="world_company"/>
+        <field name="company_ids" eval="[(4, ref('world_company'))]"/>
+    </record>
+    <record id="identity_elena" model="pmorg.identity"><field name="company_id" ref="world_company"/><field name="partner_id" ref="partner_elena"/><field name="user_id" ref="user_elena"/></record>
+    <record id="identity_dan" model="pmorg.identity"><field name="company_id" ref="world_company"/><field name="partner_id" ref="partner_dan"/></record>
+    <record id="identity_ioana" model="pmorg.identity"><field name="company_id" ref="world_company"/><field name="partner_id" ref="partner_ioana"/></record>
+    <record id="employee_elena" model="hr.employee"><field name="name">Elena Marin</field><field name="company_id" ref="world_company"/><field name="job_title">Managing Partner</field><field name="work_contact_id" ref="partner_elena"/></record>
+    <record id="employee_dan" model="hr.employee"><field name="name">Dan Petre</field><field name="company_id" ref="world_company"/><field name="job_title">Senior Consultant</field><field name="work_contact_id" ref="partner_dan"/><field name="parent_id" ref="employee_elena"/></record>
+    <record id="employee_ioana" model="hr.employee"><field name="name">Ioana Sava</field><field name="company_id" ref="world_company"/><field name="job_title">Consultant</field><field name="work_contact_id" ref="partner_ioana"/><field name="parent_id" ref="employee_dan"/></record>
+    <record id="world_project" model="project.project"><field name="name">Livrări clienți — TEST</field><field name="company_id" ref="world_company"/></record>
+</odoo>

@@ -8,7 +8,12 @@ DEFAULT_LEASE_SECONDS = 300
 MAX_LEASE_SECONDS = 3600
 
 ENVELOPE_KEYS = {"schema_version", "message_id", "actor", "occurred_at"}
-READ_ONLY_COMMANDS = {"list_due_work", "get_task_state", "list_outbox"}
+READ_ONLY_COMMANDS = {
+    "list_due_work",
+    "get_task_state",
+    "list_outbox",
+    "get_capability_registry",
+}
 
 
 class ApiError(Exception):
@@ -257,6 +262,18 @@ class PmorgOrchestratorApi(models.AbstractModel):
             }
             if run
             else None,
+        }
+
+    def _cmd_get_capability_registry(self, envelope, params):
+        import hashlib as _hashlib
+        import json as _json
+
+        types = self.env["pmorg.anchor.type"].search([("active", "=", True)])
+        registry = {t.code: {"model": t.model_name, "pack": t.pack} for t in types}
+        canonical = _json.dumps(registry, sort_keys=True)
+        return {
+            "anchor_types": registry,
+            "fingerprint": _hashlib.sha256(canonical.encode()).hexdigest(),
         }
 
     def _cmd_list_outbox(self, envelope, params):

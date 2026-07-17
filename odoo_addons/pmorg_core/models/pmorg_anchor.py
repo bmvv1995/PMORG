@@ -52,6 +52,21 @@ class PmorgAnchor(models.Model):
         for rec in self:
             rec.name = f"{rec.model_name},{rec.res_id} ({rec.role})"
 
+    @api.constrains("model_name")
+    def _check_model_registered(self):
+        Registry = self.env["pmorg.anchor.type"]
+        for rec in self:
+            if not Registry.search_count(
+                [("model_name", "=", rec.model_name), ("active", "=", True)]
+            ):
+                raise ValidationError(
+                    _(
+                        "Modelul %s nu are tip de ancoră în registry "
+                        "(ADR-002: lume închisă, fail-closed)."
+                    )
+                    % rec.model_name
+                )
+
     @api.constrains("role", "task_id")
     def _check_single_subject(self):
         for rec in self.filtered(lambda a: a.role == "subject"):

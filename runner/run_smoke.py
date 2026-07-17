@@ -17,6 +17,48 @@ from pmorg_runner.memory_client import MemoryClient
 
 CHECKS = []
 
+PROFILES = {
+    "org-min": {
+        "company": "Atelier Minimal Test SRL",
+        "project": "Coordonare internă — TEST",
+        "participant": "Victor Neagu",
+        "owner": "Ana Dobre",
+        "participant_key": "victor.neagu",
+        "participant_ref": "pmorg_core.pmorg_demo_identity_victor",
+        "validator_ref": "pmorg_core.pmorg_demo_identity_paul",
+        "owner_ref": "pmorg_core.pmorg_demo_identity_ana",
+        "code": "MIN-001",
+        "memory_url": "http://127.0.0.1:18091",
+        "foreign": "org-distribution",
+    },
+    "org-services": {
+        "company": "Birou Servicii Test SRL",
+        "project": "Livrări clienți — TEST",
+        "participant": "Ioana Sava",
+        "owner": "Elena Marin",
+        "participant_key": "ioana.sava",
+        "participant_ref": "pmorg_world_services.identity_ioana",
+        "validator_ref": "pmorg_world_services.identity_dan",
+        "owner_ref": "pmorg_world_services.identity_elena",
+        "code": "SRV-001",
+        "memory_url": "http://127.0.0.1:18092",
+        "foreign": "org-min",
+    },
+    "org-distribution": {
+        "company": "Delta Distribution Test SRL",
+        "project": "Clarificări operaționale — TEST",
+        "participant": "Mihai Stan",
+        "owner": "Mara Ionescu",
+        "participant_key": "mihai.stan",
+        "participant_ref": "pmorg_world_distribution.identity_mihai",
+        "validator_ref": "pmorg_world_distribution.identity_andrei",
+        "owner_ref": "pmorg_world_distribution.identity_mara",
+        "code": "DST-001",
+        "memory_url": "http://127.0.0.1:18093",
+        "foreign": "org-min",
+    },
+}
+
 
 def check(name, condition, detail=""):
     CHECKS.append((name, bool(condition), detail))
@@ -37,15 +79,18 @@ def main():
     parser.add_argument("--db", default="pmorg_smoke")
     parser.add_argument("--login", default="admin")
     parser.add_argument("--password", default="admin")
-    parser.add_argument("--memory-url", default="http://127.0.0.1:18091")
+    parser.add_argument("--profile", default="org-min", choices=sorted(PROFILES))
+    parser.add_argument("--memory-url", default=None)
     args = parser.parse_args()
+    prof = PROFILES[args.profile]
+    code = prof["code"]
 
     clock = VirtualClock("2026-07-16 08:00:00")
     api = OdooApiClient(args.url, args.db, args.login, args.password)
     channel = SimulatedChannel(
         {
-            "victor.neagu": [
-                "Criteriul de acceptare e livrarea validată de Paul, "
+            prof["participant_key"]: [
+                "Criteriul de acceptare e livrarea validată de responsabil, "
                 "până vineri. Nu l-am trecut nicăieri în scris."
             ]
         }
@@ -53,7 +98,7 @@ def main():
 
     # -- 1–2. Mara creează inițiativa, obiectivul și criteriul (rol uman) ----
     company = api.execute(
-        "res.company", "search", [["name", "=", "Atelier Minimal Test SRL"]]
+        "res.company", "search", [["name", "=", prof["company"]]]
     )
     check("Compania sintetică există (demo încărcat)", company)
     # Fixture: operatorul uman primește acces la compania sintetică
@@ -61,18 +106,18 @@ def main():
     api.execute("res.users", "write", [api.uid], {"company_ids": [(4, company[0])]})
     project = api.execute(
         "project.project", "search",
-        [["name", "=", "Coordonare internă — TEST"]],
+        [["name", "=", prof["project"]]],
     )
     victor = api.execute(
-        "pmorg.identity", "search", [["name", "=", "Victor Neagu"]], limit=1
+        "pmorg.identity", "search", [["name", "=", prof["participant"]]], limit=1
     )
     owner = api.execute(
-        "pmorg.identity", "search", [["name", "=", "Ana Dobre"]], limit=1
+        "pmorg.identity", "search", [["name", "=", prof["owner"]]], limit=1
     )
     initiative_id = api.execute(
         "pmorg.initiative", "create",
         {
-            "name": "MIN-001 — smoke run",
+            "name": code + " — smoke run",
             "objective": "Stabilirea criteriului de acceptare și finalizarea livrabilului",
             "project_id": project[0],
             "company_id": company[0],
@@ -137,8 +182,8 @@ def main():
     # -- 5. Canalul simulat: întrebare + așteptare + răspuns scriptat --------
     get_result(api.call("record_progress", dict(run_ref, note="contact inițial"),
                         clock.now), "record_progress")
-    channel.send_message("victor.neagu",
-                         "Bună, care e criteriul de acceptare pentru MIN-001?",
+    channel.send_message(prof["participant_key"],
+                         "Bună, care e criteriul de acceptare pentru " + code + "?",
                          "smoke-XNX-001", clock.now)
     get_result(
         api.call(
@@ -175,9 +220,9 @@ def main():
         "schedule_next_check",
     )
     clock.advance(hours=2)
-    reply = channel.receive_reply("victor.neagu", "smoke-XNX-001", clock.now)
+    reply = channel.receive_reply(prof["participant_key"], "smoke-" + code, clock.now)
     check("Pas 5: răspuns scriptat primit, identitate structurală",
-          reply and reply["verified_sender_identity"] == "victor.neagu")
+          reply and reply["verified_sender_identity"] == prof["participant_key"])
 
     # Revendicare nouă la scadență (run #2 pe același task — 01-ARCH §4.2).
     claim2 = get_result(
@@ -191,17 +236,17 @@ def main():
     }
 
     # -- 6–8. Memoria REALĂ prin contract (Gate B) ----------------------------
-    mem = MemoryClient(args.memory_url)
-    reg = mem.ok("memory_negotiate_registry", profile_id="org-min")
+    mem = MemoryClient(args.memory_url or prof["memory_url"])
+    reg = mem.ok("memory_negotiate_registry", profile_id=args.profile)
     check("Gate B: registry negociat (org-min, INITIATIVE în vocabular)",
           "INITIATIVE" in reg["anchor_types"])
     check("Gate B: profil străin refuzat fail-closed (MEM_REGISTRY_MISMATCH)",
           mem.expect_error("memory_negotiate_registry",
-                           "MEM_REGISTRY_MISMATCH", profile_id="org-distrib"))
+                           "MEM_REGISTRY_MISMATCH", profile_id=prof["foreign"]))
 
-    victor_ref = "pmorg_core.pmorg_demo_identity_victor"
-    paul_ref = "pmorg_core.pmorg_demo_identity_paul"
-    ana_ref = "pmorg_core.pmorg_demo_identity_ana"
+    victor_ref = prof["participant_ref"]
+    paul_ref = prof["validator_ref"]
+    ana_ref = prof["owner_ref"]
 
     ev = mem.ok(
         "memory_capture_evidence",
@@ -233,8 +278,8 @@ def main():
     ]
     cl = mem.ok(
         "memory_propose_claim",
-        statement="Criteriul de acceptare MIN-001: livrare validată de Paul, "
-                  "termen vineri",
+        statement="Criteriul de acceptare " + code
+                  + ": livrare validată, termen vineri",
         author_ref=victor_ref,
         evidence_ids=[ev["evidence_id"]],
         anchors=anchors,
@@ -250,7 +295,7 @@ def main():
 
     report = mem.ok(
         "memory_capture_evidence",
-        external_id="TEST-EVID-MIN-001",
+        external_id="TEST-EVID-" + code,
         source="report:synthetic",
         author_ref=ana_ref,
         content="Raport de verificare MIN-001: criteriul confirmat în "

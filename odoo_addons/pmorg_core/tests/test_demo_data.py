@@ -54,9 +54,17 @@ class TestDemoData(TransactionCase):
         self.assertEqual(subject.res_id, init.id)
 
     def test_demo_no_employees_no_real_identifiers(self):
-        # Profilul minimal nu are angajați — modelul hr.employee nici nu
-        # trebuie să existe în registry (baza nu instalează hr).
-        self.assertNotIn("hr.employee", self.env.registry)
+        # Testul de absență HR se aplică doar profilului minimal; în
+        # profilurile cu pack HR instalat, absența nu mai e o cerință.
+        if "hr.employee" not in self.env.registry:
+            pass  # absența confirmată (profil minimal)
+        elif not self.env["ir.module.module"].search_count(
+            [
+                ("name", "=", "pmorg_anchor_hr"),
+                ("state", "in", ("installed", "to install", "to upgrade")),
+            ]
+        ):
+            self.fail("hr instalat fără pack-ul de ancorare PMORG aferent.")
         for xmlid in (
             "pmorg_demo_partner_ana",
             "pmorg_demo_partner_paul",

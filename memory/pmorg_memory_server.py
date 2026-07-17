@@ -26,16 +26,31 @@ import psycopg2.extras
 
 CONTRACT = "pmorg-memory/1.0"
 
+CORE_TYPES = {
+    "COMPANY": "res.company",
+    "PROJECT": "project.project",
+    "TASK": "project.task",
+    "INITIATIVE": "pmorg.initiative",
+    "IDENTITY": "pmorg.identity",
+}
+HR_TYPES = {"EMPLOYEE": "hr.employee", "DEPARTMENT": "hr.department"}
+INVENTORY_TYPES = {
+    "INVENTORY_TRANSFER": "stock.picking",
+    "INVENTORY_MOVE": "stock.move",
+}
+
 REGISTRIES = {
     "org-min": {
         "registry_version": "1.0",
-        "anchor_types": {
-            "COMPANY": "res.company",
-            "PROJECT": "project.project",
-            "TASK": "project.task",
-            "INITIATIVE": "pmorg.initiative",
-            "IDENTITY": "pmorg.identity",
-        },
+        "anchor_types": dict(CORE_TYPES),
+    },
+    "org-services": {
+        "registry_version": "1.0",
+        "anchor_types": dict(CORE_TYPES, **HR_TYPES),
+    },
+    "org-distribution": {
+        "registry_version": "1.0",
+        "anchor_types": dict(CORE_TYPES, **HR_TYPES, **INVENTORY_TYPES),
     },
 }
 

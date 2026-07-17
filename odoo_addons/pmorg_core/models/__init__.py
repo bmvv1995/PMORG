@@ -1,3 +1,4 @@
+from . import pmorg_anchor_type
 from . import pmorg_identity
 from . import pmorg_initiative
 from . import pmorg_success_criterion

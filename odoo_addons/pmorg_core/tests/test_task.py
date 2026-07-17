@@ -39,9 +39,20 @@ class TestPmorgTask(TransactionCase):
             Anchor.create(
                 {
                     "task_id": self.task.id,
-                    "model_name": "res.partner",
+                    "model_name": "pmorg.identity",
                     "res_id": 1,
                     "role": "subject",
+                }
+            )
+
+    def test_anchor_unregistered_model_refused(self):
+        with self.assertRaises(ValidationError):
+            self.env["pmorg.anchor"].create(
+                {
+                    "task_id": self.task.id,
+                    "model_name": "hr.employee",
+                    "res_id": 1,
+                    "role": "mentions",
                 }
             )
 
@@ -51,7 +62,7 @@ class TestPmorgTask(TransactionCase):
             Anchor.create(
                 {
                     "task_id": self.task.id,
-                    "model_name": "res.partner",
+                    "model_name": "pmorg.identity",
                     "res_id": res_id,
                     "role": "mentions",
                 }
