@@ -5,3 +5,4 @@ from . import test_task
 from . import test_access
 from . import test_demo_data
 from . import test_orchestrator_api
+from . import test_provenance

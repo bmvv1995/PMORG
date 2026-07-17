@@ -14,6 +14,7 @@
         "views/pmorg_menu.xml",
         "data/pmorg_data.xml",
         "data/pmorg_anchor_types.xml",
+        "data/pmorg_materiality.xml",
     ],
     "demo": [
         "data/pmorg_demo.xml",

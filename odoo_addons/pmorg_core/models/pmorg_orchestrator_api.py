@@ -13,6 +13,8 @@ READ_ONLY_COMMANDS = {
     "get_task_state",
     "list_outbox",
     "get_capability_registry",
+    "list_material_changes",
+    "list_provenance_gaps",
 }
 
 
@@ -275,6 +277,113 @@ class PmorgOrchestratorApi(models.AbstractModel):
             "anchor_types": registry,
             "fingerprint": _hashlib.sha256(canonical.encode()).hexdigest(),
         }
+
+    # ------------------------------------------------- detectorul golului (D1)
+
+    def _cmd_list_material_changes(self, envelope, params):
+        """Schimbări pe câmpuri materiale (tracking Odoo), pentru D1."""
+        since = self._parse_dt(params.get("since") or envelope["occurred_at"],
+                               "since")
+        rules = self.env["pmorg.materiality.rule"].search([("active", "=", True)])
+        material = {}
+        for rule in rules:
+            material.setdefault(rule.model_name, set()).add(rule.field_name)
+        if not material:
+            return {"changes": []}
+        values = self.env["mail.tracking.value"].sudo().search(
+            [
+                ("mail_message_id.model", "in", list(material)),
+                ("mail_message_id.date", ">=", since),
+            ],
+            order="id asc",
+            limit=int(params.get("limit") or 500),
+        )
+        changes = []
+        for tv in values:
+            msg = tv.mail_message_id
+            fname = tv.field_id.name
+            if fname in material.get(msg.model, ()):
+                changes.append({
+                    "model_name": msg.model,
+                    "res_id": msg.res_id,
+                    "field_name": fname,
+                    "tracking_message_id": msg.id,
+                    "changed_at": fields.Datetime.to_string(msg.date),
+                    "author": msg.author_id.name or "",
+                })
+        return {"changes": changes}
+
+    def _cmd_record_provenance_gap(self, envelope, params):
+        for key in ("model_name", "res_id", "field_name",
+                    "tracking_message_id", "summary"):
+            if params.get(key) in (None, ""):
+                raise ApiError("E_SCHEMA", f"Câmp lipsă: {key}.")
+        Gap = self.env["pmorg.provenance.gap"]
+        existing = Gap.search(
+            [
+                ("model_name", "=", params["model_name"]),
+                ("res_id", "=", int(params["res_id"])),
+                ("field_name", "=", params["field_name"]),
+                ("tracking_message_id", "=", int(params["tracking_message_id"])),
+            ],
+            limit=1,
+        )
+        if existing:
+            return {"gap_id": existing.id, "status": existing.status,
+                    "replayed": True}
+        gap = Gap.create({
+            "gap_class": params.get("gap_class") or "d1",
+            "model_name": params["model_name"],
+            "res_id": int(params["res_id"]),
+            "field_name": params["field_name"],
+            "tracking_message_id": int(params["tracking_message_id"]),
+            "summary": params["summary"],
+            "window_hours": int(params.get("window_hours") or 72),
+        })
+        return {"gap_id": gap.id, "status": "open", "replayed": False}
+
+    def _cmd_list_provenance_gaps(self, envelope, params):
+        domain = []
+        if params.get("status"):
+            domain.append(("status", "=", params["status"]))
+        gaps = self.env["pmorg.provenance.gap"].search(
+            domain, order="id desc", limit=int(params.get("limit") or 100)
+        )
+        return {"gaps": [{
+            "gap_id": g.id, "gap_class": g.gap_class,
+            "model_name": g.model_name, "res_id": g.res_id,
+            "field_name": g.field_name, "summary": g.summary,
+            "status": g.status,
+        } for g in gaps]}
+
+    def _cmd_resolve_gap(self, envelope, params):
+        gap_id = params.get("gap_id")
+        resolution = params.get("resolution")
+        if not gap_id or resolution not in ("explained", "dismissed"):
+            raise ApiError("E_SCHEMA", "gap_id și resolution sunt obligatorii.")
+        gap = self.env["pmorg.provenance.gap"].browse(int(gap_id))
+        if not gap.exists():
+            raise ApiError("E_UNKNOWN", f"Gol inexistent: {gap_id}.")
+        if gap.status != "open":
+            raise ApiError("E_STATE", f"Golul e deja {gap.status}.")
+        if resolution == "explained" and not params.get("memory_ref"):
+            raise ApiError("E_CRITERIA",
+                           "Explicarea cere referința de memorie a răspunsului.")
+        gap.action_resolve(
+            resolution,
+            memory_ref=params.get("memory_ref") or False,
+            identity_id=int(params["identity_id"])
+            if params.get("identity_id") else False,
+        )
+        if gap.model_name == "project.task":
+            task = self.env["project.task"].browse(gap.res_id)
+            if task.exists():
+                self._emit(
+                    task, "provenance.gap_resolved", envelope,
+                    data={"gap_id": gap.id, "resolution": resolution,
+                          "memory_ref": params.get("memory_ref") or ""},
+                )
+        return {"gap_id": gap.id, "status": gap.status}
 
     def _cmd_list_outbox(self, envelope, params):
         after = int(params.get("after_id") or 0)

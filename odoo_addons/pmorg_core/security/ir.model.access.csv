@@ -17,3 +17,7 @@ access_pmorg_command_inbox_user,pmorg.command.inbox.user,model_pmorg_command_inb
 access_pmorg_command_inbox_system,pmorg.command.inbox.system,model_pmorg_command_inbox,base.group_system,1,1,1,1
 access_pmorg_anchor_type_user,pmorg.anchor.type.user,model_pmorg_anchor_type,base.group_user,1,0,0,0
 access_pmorg_anchor_type_system,pmorg.anchor.type.system,model_pmorg_anchor_type,base.group_system,1,1,1,1
+access_pmorg_materiality_user,pmorg.materiality.user,model_pmorg_materiality_rule,base.group_user,1,0,0,0
+access_pmorg_materiality_system,pmorg.materiality.system,model_pmorg_materiality_rule,base.group_system,1,1,1,1
+access_pmorg_gap_user,pmorg.gap.user,model_pmorg_provenance_gap,base.group_user,1,1,1,0
+access_pmorg_gap_system,pmorg.gap.system,model_pmorg_provenance_gap,base.group_system,1,1,1,1
