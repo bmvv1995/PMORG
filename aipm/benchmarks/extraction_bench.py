@@ -53,8 +53,10 @@ CASES = [
          require=["commitment"], forbid=[], due=("commitment", "2026-07-17")),
     dict(id="E-09", text="Mihai zicea ca poate ar rezolva el, dar nu a confirmat nimic",
          require=[], forbid=["commitment", "decision"]),
+    # E-10 recalibrat: regula anunțată EXPLICIT = decision (definiția din prompt);
+    # rule_candidate e rezervat tiparului implicit (E-17).
     dict(id="E-10", text="regula noua de azi: comenzile sub 100 de lei nu se mai livreaza gratuit",
-         require=["rule_candidate"], forbid=["commitment"]),
+         require=["decision"], forbid=["commitment"]),
     dict(id="E-11", text="n-ar trebui sa schimbam furnizorul de paine? iar au intarziat",
          require=["open_question"], forbid=["decision"]),
     dict(id="E-12", text="nu mai facem terasa luna asta, o amanam pe august — am vorbit cu Mara",
@@ -68,6 +70,11 @@ CASES = [
          require=["commitment"], forbid=["decision"]),
     dict(id="E-16", text="poate reusim candva sa refacem site-ul, ar fi frumos",
          require=[], forbid=["commitment", "decision"]),
+    dict(id="E-17", text="iar am livrat gratuit o comanda de 40 de lei... de fiecare data "
+                         "cand e sub 100 pierdem bani pe transport",
+         require=["rule_candidate"], forbid=["decision", "commitment"]),
+    dict(id="E-18", text="am decis ca de azi inchidem lunea",
+         require=["decision"], forbid=["rule_candidate", "commitment"]),
 ]
 
 
