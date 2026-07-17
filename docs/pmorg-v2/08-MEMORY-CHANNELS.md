@@ -44,7 +44,22 @@ permanent fără de care actul nu se poate îmbunătăți iterativ.
    materialitate × vechime; restul se acumulează tăcut, vizibile la cerere.
 6. **Agregat înaintea individului.** Sănătate de proces, nu dosar de
    persoană; clasa D5 vine ultima și doar agregată.
-7. **Poarta înaintea conductei** (lege moștenită): nicio sursă nouă fără
+7. **HIL = exclusiv vocabular** (2026-07-18, decis de owner): omul intră în
+   flux DOAR pentru extinderea lumii cunoscute — entitate nouă recurentă sau
+   tip nou de ancoră. Interpretarea (kind, owner, termen, ancorarea pe
+   instanțe existente) e integral automată: consemnare-cu-chitanță dacă e
+   sigură, tăcere dacă nu. `needs_review` nu e coadă umană; zero adnotare pe
+   fluxul de mesaje. Tăcerea e sigură pentru că detectorul prinde orice
+   consecință materială.
+8. **Detectorul e autocalibratorul vocabularului**: explicațiile golurilor
+   sunt semnal tare pentru entități noi (legate de efecte reale, nu de simple
+   mențiuni), aglomerările de goluri pe modele neacoperite propun tipuri/
+   pack-uri noi (sistemul propune, ownerul promovează — ADR-002), explicațiile
+   devin cazuri de benchmark (regula cazului real), respingerile calibrează
+   materialitatea. Complexitatea interpretării se mută într-un singur loc
+   determinist și măsurabil; restul componentelor au voie să fie simple și
+   conservatoare.
+9. **Poarta înaintea conductei** (lege moștenită): nicio sursă nouă fără
    identitate structurală a autorului și filtru de intimitate pe acel drum.
 
 ## 3. Obiectul: gap-ul de proveniență și clasele de detecție
