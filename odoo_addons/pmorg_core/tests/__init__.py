@@ -6,3 +6,4 @@ from . import test_access
 from . import test_demo_data
 from . import test_orchestrator_api
 from . import test_provenance
+from . import test_clock

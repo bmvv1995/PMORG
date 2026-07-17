@@ -54,6 +54,27 @@ class PmorgOrchestratorApi(models.AbstractModel):
             ) from exc
 
     @api.model
+    def _resolve_now(self, envelope, params):
+        """Timpul autoritativ (ADR-017). Mod 'tick': doar ceasul trusted."""
+        mode = self.env["ir.config_parameter"].sudo().get_param(
+            "pmorg.clock_mode", "client")
+        tick_id = params.get("tick_id")
+        if tick_id:
+            tick = self.env["pmorg.clock.tick"].sudo().search(
+                [("tick_id", "=", tick_id)], limit=1)
+            if not tick:
+                raise ApiError(
+                    "E_AUTH",
+                    "tick_id necunoscut — timpul vine doar de la ceasul trusted.")
+            return tick.sim_time
+        if mode == "tick":
+            raise ApiError(
+                "E_SCHEMA",
+                "Modul tick: tick_id obligatoriu; now client-side e refuzat.")
+        return self._parse_dt(
+            params.get("now") or envelope["occurred_at"], "now")
+
+    @api.model
     def _validate_envelope(self, payload, mutant):
         if not isinstance(payload, dict):
             raise ApiError("E_SCHEMA", "Payload-ul trebuie să fie obiect JSON.")
@@ -207,7 +228,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
     # ------------------------------------------------------------- read-only
 
     def _cmd_list_due_work(self, envelope, params):
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         limit = int(params.get("limit") or 50)
         domain = [
             "|",
@@ -385,6 +406,17 @@ class PmorgOrchestratorApi(models.AbstractModel):
                 )
         return {"gap_id": gap.id, "status": gap.status}
 
+    def _cmd_register_tick(self, envelope, params):
+        for key in ("tick_id", "seq", "sim_time"):
+            if params.get(key) in (None, ""):
+                raise ApiError("E_SCHEMA", f"Câmp lipsă: {key}.")
+        tick = self.env["pmorg.clock.tick"].create({
+            "tick_id": params["tick_id"],
+            "seq": int(params["seq"]),
+            "sim_time": self._parse_dt(params["sim_time"], "sim_time"),
+        })
+        return {"tick_id": tick.tick_id, "seq": tick.seq}
+
     def _cmd_list_outbox(self, envelope, params):
         after = int(params.get("after_id") or 0)
         limit = int(params.get("limit") or 100)
@@ -416,7 +448,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_claim_task(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         company_id = envelope.get("company_id")
         if company_id and task.company_id.id != int(company_id):
             raise ApiError("E_COMPANY", "Compania nu corespunde taskului.")
@@ -476,7 +508,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_heartbeat(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         extend = min(
             int(params.get("extend_seconds") or DEFAULT_LEASE_SECONDS),
@@ -490,7 +522,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_record_progress(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         if task.orchestration_state not in ("claimed", "running", "waiting_response"):
             raise ApiError(
@@ -508,7 +540,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_record_waiting_response(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         if task.orchestration_state not in ("claimed", "running"):
             raise ApiError(
@@ -535,7 +567,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_schedule_next_check(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         next_check = self._parse_dt(params.get("next_check_at"), "next_check_at")
         run.write({"outcome": "released", "ended_at": now,
@@ -552,7 +584,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_block_task(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         if not params.get("reason"):
             raise ApiError("E_SCHEMA", "Blocarea cere un motiv explicit.")
@@ -570,7 +602,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_release_task(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         if task.orchestration_state == "blocked":
             if params.get("reason") != "unblocked":
                 raise ApiError("E_SCHEMA", "Deblocarea cere reason='unblocked'.")
@@ -591,7 +623,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_complete_run(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         outcome = params.get("outcome")
         if outcome not in ("done", "failed", "needs_review"):
@@ -700,7 +732,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
     def _cmd_request_approval(self, envelope, params):
         task = self._get_task(params)
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         run = self._get_run(task, params, now)
         if not params.get("subject"):
             raise ApiError("E_SCHEMA", "subject lipsă.")
@@ -731,7 +763,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
         return {"task_id": task.id, "verification_status": "pending"}
 
     def _cmd_reclaim_expired(self, envelope, params):
-        now = self._parse_dt(params.get("now") or envelope["occurred_at"], "now")
+        now = self._resolve_now(envelope, params)
         expired = self.env["pmorg.task.run"].search(
             [("outcome", "=", "running"), ("lease_expires_at", "<", now)]
         )

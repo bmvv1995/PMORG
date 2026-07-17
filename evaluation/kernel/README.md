@@ -16,10 +16,10 @@ provisionare proiect compose izolat (volume proprii) → instalare 3 profiluri
 | 11 trasă append-only hash-chained | ✅ journal.jsonl |
 | 15 run întrerupt ⇒ INVALID, nu PASS | ✅ |
 | 16 reset `down -v` | ✅ (credențiale noi per run: proiectat) |
-| 5 hardening containere (cap_drop, no-new-priv) | 🔶 proiectat — preluare din șablonul sb2 |
+| 5 hardening containere | 🔶 proiectat; imaginea Odoo e parametrizată (`ODOO_IMAGE`, revizia 1b8f680 disponibilă) |
 | 7 oracle DB separat cu rol propriu | 🔶 v0: oracle = fișiere locale evaluator, nu DB |
-| 9 worldgen determinist cu world.lock | 🔶 proiectat (lumile sunt demo packs) |
-| 10 tick_id neforjabil server-side | 🔶 proiectat — contract 2.0 (nota din 07-CONTRACTS §9) |
+| 9 worldgen determinist cu world.lock | ✅ v1 (`worldgen/`): plan din seed, lock reproductibil, incidente cu adevăr cunoscut, materializare XML-RPC |
+| 10 tick_id neforjabil server-side | ✅ dual-mode: pmorg.clock.tick + clock_mode=tick refuză now client-side |
 | 12 checkpointuri sigilate per tick, as_of_event_seq | 🔶 proiectat |
 | 13 scorer cu citare de dovezi per metrică | 🔶 v0: scor agregat pe unități așteptate |
 | 14 splituri corpus + hidden labels | 🔶 proiectat (intră cu corpusul, 05-MEMORY-DATA) |

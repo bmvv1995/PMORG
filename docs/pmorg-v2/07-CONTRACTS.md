@@ -180,6 +180,13 @@ API-ul nu folosește ceasul serverului pentru decizii de scadență: `now` vine
 Timestampurile de audit rămân pe ceasul serverului. Astfel timpul virtual al
 runnerului MVP conduce longitudinalitatea fără patch-uri.
 
+> **Reconciliere ADR-017 — IMPLEMENTAT dual-mode (S5, 2026-07-18):** modelul
+> `pmorg.clock.tick` (imuabil, înregistrabil doar de identitatea de sistem =
+> harness-ul) + `register_tick`. Toate comenzile rezolvă timpul prin
+> `_resolve_now`: un `tick_id` valid are întotdeauna prioritate; în modul
+> `pmorg.clock_mode=tick` (sandbox), `now` client-side e refuzat (`E_SCHEMA`),
+> iar un tick necunoscut ⇒ `E_AUTH`. Modul `client` rămâne pentru dev.
+> Nota istorică:
 > **Reconciliere deschisă cu ADR-017 (Proposed):** în sandboxul de evaluare,
 > timpul autoritativ se rezolvă server-side dintr-un `tick_id` emis de ceasul
 > trusted; runtime-ul nu poate furniza un `now` autoritativ. Când ADR-017
