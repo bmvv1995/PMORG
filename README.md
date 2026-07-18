@@ -22,6 +22,23 @@
 > Instrucțiunile de instalare de mai jos instalează implementarea curentă,
 > **nu** aplicația Odoo PMORG v2.
 
+## Rolul acestui repository
+
+Acest repository nu este codebase-ul produsului V3. Rolurile sunt separate:
+
+| Artefact | Statut |
+|---|---|
+| `docs/pmorg-v3/` | cerința, contractele și criteriile canonice V3 (`RB-1`) |
+| codul V1/V2, sandboxurile și în special SB3 | baseline executabil de referință pentru migrare și regresie |
+| `evaluation/`, `worldgen/` și scenariile longitudinale | active de evaluare care se portează și se recalifică pe V3 |
+| repository-ul separat `PMORG-Platform` | viitorul codebase V3, pornit dintr-un fork Onyx CE fixat |
+
+„Baseline executabil de referință” înseamnă că SB3 demonstrează comportamente
+utile și furnizează teste, fixtures și oracles. Nu înseamnă că schema,
+topologia, UI-ul sau codul SB3 sunt implementarea V3. Un comportament devine
+V3 numai după portare pe contractele `RB-1` și calificare în
+`PMORG-Platform`.
+
 ## Implementarea curentă (v1 / snapshot)
 
 Un conducător de procese organizaționale, artificial, instalat în casa

@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Inventar inițial; necesită revalidare la bootstrap |
+| Status | Clasificare Accepted; inventarul necesită revalidare la bootstrap |
 | Versiune | `3.0-baseline.1` |
 | Data | 2026-07-18 |
 
@@ -18,6 +18,32 @@ existent:
 V2, SB2 și SB3 rămân read-only/reference până când un artefact este clasificat
 și acceptat pentru portare. Niciun import de date de producție nu intră în
 MVP.
+
+### 1.1 Statutul exact al SB3
+
+SB3 este **baseline-ul executabil de referință pentru migrarea V3**. Nu este
+codebase-ul și nu este o implementare parțială a V3.
+
+Din SB3 păstrăm ca input de migrare:
+
+- scenariile longitudinale cu timp virtual, restart, tăcere, duplicate,
+  contradicție, supersession, conflict optimist și recovery;
+- runnerul determinist și contractele observabile pe care le demonstrează;
+- worldgen, fixture-urile sintetice, oracle-ul și run bundle-ul;
+- scenariul Inventory/XNX și testele de closed world;
+- proprietățile testabile de lease, idempotency, provenance și audit.
+
+SB3 nu decide schema Semantic Core, topologia bazelor, UI-ul, limitele
+Turn Coordinator, integrarea Onyx ori forma finală a addon-urilor Odoo.
+Acestea sunt guvernate de `RB-1` și se implementează în repository-ul separat
+`PMORG-Platform`.
+
+Un test SB3 devine test V3 numai după ce:
+
+1. este exprimat pe contractele și state machines V3;
+2. nu depinde de internals sau stubs legacy;
+3. rulează împotriva `PMORG-Platform`;
+4. produce artefactele și verdictul cerute de Gates A–F.
 
 ## 2. Matricea conceptuală
 
