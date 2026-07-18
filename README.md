@@ -1,5 +1,16 @@
 # PM organizațional
 
+> **PMORG v3 — direcția de implementare acceptată (2026-07-18):** produsul
+> rămâne operatorul organizațional persistent Odoo-first, dar noua generație
+> se construiește ca fork guvernat al Onyx CE, cu PMORG Semantic Core drept
+> bounded context first-class și Hermes drept orchestrator persistent vizat.
+> Definiția canonică începe în
+> [PMORG v3 — definiția produsului](docs/pmorg-v3/00-PRODUCT.md). V2 și
+> sandboxurile existente rămân referințe înghețate; instrucțiunile de
+> instalare din acest README descriu implementarea v1, nu v3. Cerința v3 este
+> înghețată în `RB-1`. La orice contradicție de direcție între v3 și v2,
+> documentele v3 prevalează.
+
 > **Revizia v0.3 a direcției de produs PMORG v2 (în revizuire, 2026-07-17):** definiția
 > țintă, arhitectura, MVP-ul, strategia datelor și sandboxul de evaluare sunt în
 > [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md). Acolo unde există o
@@ -99,6 +110,8 @@ după configurare. Ghidul complet, pas cu pas:
 
 | Document | Ce explică |
 |---|---|
+| [definiția PMORG v3](docs/pmorg-v3/00-PRODUCT.md) | produsul bazat pe fork Onyx, Semantic Core, arhitectura, MVP-ul și migrarea |
+| [requirements baseline v3](docs/pmorg-v3/08-REQUIREMENTS-BASELINE.md) | cerințele normative, scope-ul înghețat și readiness-ul pentru implementare |
 | [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md) | intrarea în suita canonică v2 și ordinea completă de lectură |
 | [strategia de date a memoriei](docs/pmorg-v2/05-MEMORY-DATA.md) | cum construim lumea, oamenii și adevărul măsurabil fără date de producție |
 | [sandboxul complet de evaluare](docs/pmorg-v2/06-EVALUATION-SANDBOX.md) | izolarea SUT–oracle, run bundle, worldgen, corpus, scoring și fazare |
