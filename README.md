@@ -8,15 +8,15 @@
 > [PMORG v3 — definiția produsului](docs/pmorg-v3/00-PRODUCT.md). V2 și
 > sandboxurile existente rămân referințe înghețate; instrucțiunile de
 > instalare din acest README descriu implementarea v1, nu v3. Cerința v3 este
-> înghețată în `RB-1`. La orice contradicție de direcție între v3 și v2,
+> înghețată în `RB-1/C1`. La orice contradicție de direcție între v3 și v2,
 > documentele v3 prevalează.
 
-> **Revizia v0.3 a direcției de produs PMORG v2 (în revizuire, 2026-07-17):** definiția
+> **PMORG v2 (frozen-reference, 2026-07-18):** definiția
 > țintă, arhitectura, MVP-ul, strategia datelor și sandboxul de evaluare sunt în
-> [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md). Acolo unde există o
-> contradicție, documentele v2 descriu direcția propusă, iar acest README și
-> documentele istorice descriu produsul implementat la commitul curent.
-> Direcția v2 este **Odoo-first și organization-agnostic**: ținta cere ca
+> [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md). Documentele și contractele
+> v2 rămân nemodificate semantic pentru reproducerea SB3 și portarea testelor;
+> nu sunt a doua direcție activă. V2 este **Odoo-first și
+> organization-agnostic**: ținta cere ca
 > același build să fie validat pe profiluri sintetice de distribuție,
 > servicii și Project-only.
 > Instrucțiunile de instalare de mai jos instalează implementarea curentă,
@@ -28,7 +28,7 @@ Acest repository nu este codebase-ul produsului V3. Rolurile sunt separate:
 
 | Artefact | Statut |
 |---|---|
-| `docs/pmorg-v3/` | cerința, contractele și criteriile canonice V3 (`RB-1`) |
+| `docs/pmorg-v3/` | cerința, contractele și criteriile canonice V3 (`RB-1/C1`) |
 | codul V1/V2, sandboxurile și în special SB3 | baseline executabil de referință pentru migrare și regresie |
 | `evaluation/`, `worldgen/` și scenariile longitudinale | active de evaluare care se portează și se recalifică pe V3 |
 | repository-ul separat `PMORG-Platform` | viitorul codebase V3, pornit dintr-un fork Onyx CE fixat |
@@ -36,7 +36,7 @@ Acest repository nu este codebase-ul produsului V3. Rolurile sunt separate:
 „Baseline executabil de referință” înseamnă că SB3 demonstrează comportamente
 utile și furnizează teste, fixtures și oracles. Nu înseamnă că schema,
 topologia, UI-ul sau codul SB3 sunt implementarea V3. Un comportament devine
-V3 numai după portare pe contractele `RB-1` și calificare în
+V3 numai după portare pe contractele `RB-1/C1` și calificare în
 `PMORG-Platform`.
 
 ## Implementarea curentă (v1 / snapshot)
@@ -129,6 +129,7 @@ după configurare. Ghidul complet, pas cu pas:
 |---|---|
 | [definiția PMORG v3](docs/pmorg-v3/00-PRODUCT.md) | produsul bazat pe fork Onyx, Semantic Core, arhitectura, MVP-ul și migrarea |
 | [requirements baseline v3](docs/pmorg-v3/08-REQUIREMENTS-BASELINE.md) | cerințele normative, scope-ul înghețat și readiness-ul pentru implementare |
+| [supersession contracte v2 → v3](docs/pmorg-v3/14-V2-CONTRACT-SUPERSESSION.md) | maparea explicită a operațiilor, erorilor, comenzilor și idempotency |
 | [definiția PMORG v2](docs/pmorg-v2/00-PRODUCT.md) | intrarea în suita canonică v2 și ordinea completă de lectură |
 | [strategia de date a memoriei](docs/pmorg-v2/05-MEMORY-DATA.md) | cum construim lumea, oamenii și adevărul măsurabil fără date de producție |
 | [sandboxul complet de evaluare](docs/pmorg-v2/06-EVALUATION-SANDBOX.md) | izolarea SUT–oracle, run bundle, worldgen, corpus, scoring și fazare |

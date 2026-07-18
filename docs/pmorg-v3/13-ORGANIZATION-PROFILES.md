@@ -3,13 +3,13 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted |
-| Baseline | `RB-1` |
+| Baseline | `RB-1/C1` |
 | Suite | `ORG-CONFORMANCE-v1` |
 | Data | 2026-07-18 |
 
 ## 1. Scop
 
-Gate E demonstrează că PMORG este agnostic față de organizația concretă,
+G3-E demonstrează că PMORG este agnostic față de organizația concretă,
 fără să fie ERP-agnostic. Același build rulează în baze curate și separate:
 
 | Profil | Module | Scenariu |
@@ -65,7 +65,7 @@ policy: ORG-MIN-v1
 |---|---|
 | `id.ana_dobre` | owner și project manager |
 | `id.victor_neagu` | participant/responsabil task |
-| `id.paul_rusu` | validator criteriu și outcome |
+| `id.paul_rusu` | verificator business al criteriului și outcome-ului |
 | `id.pmorg_agent` | agent de clarificare |
 
 Identitățile folosesc `res.partner`/`pmorg.identity`; nu există
@@ -103,8 +103,9 @@ MIN-M4 Victor → PMORG:
 
 ### 3.4 Expected state
 
-- `C-MIN-01`, kind `decision`, conține criteriul normalizat și trece
-  `proposed → under_review → validated` prin Paul;
+- `C-MIN-01`, kind `decision`, conține criteriul normalizat și trece automat
+  `proposed → validated` prin policy engine; Paul furnizează evidence și
+  verifică outcome-ul, dar nu adnotează interpretarea claim-ului;
 - PMORG creează o versiune nouă a criteriului/taskului numai după approval;
 - Victor confirmă criteriul;
 - evidence sintetică de rezultat conține structura celor trei secțiuni și
@@ -130,7 +131,7 @@ policy: ORG-SERV-v1
 |---|---|
 | `id.ioana_pavel` | owner proiect/inițiativă |
 | `id.teodora_marin` | consultant și responsabil livrabil |
-| `id.radu_ene` | validator și project director |
+| `id.radu_ene` | project director și verificator business al outcome-ului |
 | `id.pmorg_agent` | agent de clarificare/urmărire |
 
 Primele trei identități sunt legate neambiguu de `hr.employee` prin HR pack.
@@ -166,7 +167,8 @@ SERV-M4 Teodora → PMORG:
 ### 4.4 Expected state
 
 - `C-SERV-01`, kind `fact`: inputul critic a sosit pe 9 martie; este susținut
-  de mesaj și evidence reference și validat de Radu;
+  de mesaj și evidence reference și validat automat de policy engine; Radu
+  nu emite verdict semantic;
 - `C-SERV-02`, kind `commitment`, creează `K-SERV-01` confirmat, cu termen
   13 martie 16:00;
 - schimbarea termenului taskului cere approval Ioana și plan version nou;
@@ -205,7 +207,7 @@ tipizat. Nu interzice apariția termenului în evidence brută sau ca
 
 ## 7. Regula aceluiași build
 
-Pentru Gate E, reportul dovedește:
+Pentru G3-E, reportul dovedește:
 
 ```text
 pmorg_platform_commit: identic
@@ -228,7 +230,7 @@ organizației și date cross-profile.
 
 ## 8. Expected verdict
 
-Fiecare profil rulează de 3 ori din volume curate. Gate E este PASS numai
+Fiecare profil rulează de 3 ori din volume curate. G3-E este PASS numai
 dacă:
 
 - toate cele 9 runuri trec traseul comun;

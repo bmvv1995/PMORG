@@ -2,13 +2,15 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | ADR-301–314 Accepted |
-| Versiune | `3.0-baseline.1` |
+| Status | ADR-301–316 Accepted |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 
 O decizie `Accepted` este normativă pentru v3. ADR-309–314 au fost acceptate
 la requirements freeze `RB-1`, cu interpretările din
-[requirements baseline](08-REQUIREMENTS-BASELINE.md).
+[requirements baseline](08-REQUIREMENTS-BASELINE.md). ADR-315–316 sunt
+corrigendum-ul `RB-1/C1`, rezultat din review-ul adversarial și decizia
+ownerului consemnate în `docs/correspondence/001*`.
 
 ## ADR-301 — V3 este o nouă generație de implementare
 
@@ -105,8 +107,11 @@ fi trecut pe date ori infrastructură de producție.
 **Status:** Accepted (2026-07-18)
 
 **Decizie:** mesajele din Onyx UI și Communication Gateway intră prin același
-Turn Coordinator: verificare context, evidence capture, recall, cognitive
-execution, tool preflight, semantic validation și receipts.
+Turn Coordinator: verificare context, poartă de intimitate înaintea stocării,
+evidence capture, recall, cognitive execution, tool preflight, semantic
+validation și receipts. Gateway/UI trimit raw content numai în Turn Admission;
+Hermes/runnerul și runtime-ul primesc după acceptare doar `AdmittedMessage`
+fără content/ref/hash. Un refuz nu traversează orchestratorul persistent.
 
 **Motiv:** pașii de siguranță nu trebuie să depindă de alegerea modelului de
 a apela un tool.
@@ -140,9 +145,11 @@ pentru `RB-1` deoarece complică upstream tracking-ul și păstrarea referinței
 
 **Status:** Accepted (2026-07-18)
 
-**Decizie:** utilizatorul poartă conversațiile, face memory review și vede
-operator inbox în UI-ul PMORG bazat pe Onyx. Odoo păstrează UI-ul nativ pentru
-starea formală, taskuri și fallback manual.
+**Decizie:** utilizatorul poartă conversațiile, guvernează vocabularul și
+matching-ul de ancoră permis și vede operator inbox plus digestul de gaps în
+UI-ul PMORG bazat pe Onyx. Odoo păstrează UI-ul nativ pentru starea formală,
+taskuri și fallback manual. UI-ul nu oferă coadă de adnotare umană pentru
+`claim_kind`, owner, termen ori semantica mesajului.
 
 **Motiv:** evită două experiențe cognitive paralele fără să ascundă ERP-ul.
 
@@ -168,6 +175,45 @@ contradicție, supersession și continuarea aceleiași inițiative.
 
 **Motiv:** persistența este în centrul intentului de produs; nu poate fi
 amânată în afara afirmației de MVP.
+
+## ADR-315 — HIL semantic este exclusiv vocabular/ancoră; detectorul golului închide tăcerea
+
+**Status:** Accepted prin
+[decizia ownerului `001a`](../correspondence/001a-decizie-owner.md)
+(2026-07-18)
+
+**Decizie:** interpretarea mesajelor și claim-urilor este automată:
+consemnare-cu-chitanță dacă trece politica, tăcere dacă nu. `under_review` este
+eliminat din state machine-ul claim-ului. Omul intervine numai pentru entități
+noi recurente, tipuri/pack-uri noi și matching de ancoră ambiguu cu consecință.
+Detectorul determinist al golului de proveniență devine componentă v3 și face
+vizibile efectele materiale rămase fără cauză consemnată.
+
+Approval-ul unei acțiuni și verificarea umană a unui outcome sunt autoritate
+business asupra efectului, nu HIL asupra interpretării claim-ului; nu pot
+produce ori modifica verdictul semantic.
+
+**Consecințe:** workspace-ul Onyx separă guvernanța vocabular/ancoră de
+claims; nu există adnotare umană pe fluxul de mesaje. `pmorg.provenance.gap`
+este stare de control Odoo, iar controllerul determinist D1–D5 se execută în
+addon-ul/control-plane-ul PMORG din Odoo. Semantic Core furnizează numai
+query-urile și receipts/proveniența prin API-ul său de domeniu, iar UI-ul
+expune digestul și rata de acoperire fără a acuza persoane.
+
+## ADR-316 — `pmorg-contracts/1.0` supersedează wire contractele v2 pentru v3
+
+**Status:** Accepted prin corecția ownerului la
+[Issue `PMORG-Platform#16`](https://github.com/bmvv1995/PMORG-Platform/issues/16)
+(2026-07-18)
+
+**Decizie:** contractele v2 rămân înghețate pentru SB3 și reproducere, dar nu
+sunt API alternativ în v3. `pmorg-contracts/1.0` este unicul contract canonic
+v3; operațiile, erorile și idempotency se portează prin maparea din
+[14-V2-CONTRACT-SUPERSESSION](14-V2-CONTRACT-SUPERSESSION.md).
+
+**Consecințe:** nu există dual-write sau compatibilitate implicită. Adaptorul
+de test legacy este izolat; rândurile inbox fără request hash verificabil nu
+devin stare autoritativă v3.
 
 ## Relația cu ADR-urile v2
 

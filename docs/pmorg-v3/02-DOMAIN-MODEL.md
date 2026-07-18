@@ -2,8 +2,8 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1` |
-| Versiune | `3.0-baseline.1` |
+| Status | Accepted — requirements baseline `RB-1/C1` |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 
 ## 1. Rolul Semantic Core
@@ -46,6 +46,8 @@ Semantic Core nu este:
 | `pmorg.monitoring.policy` | termene, tăcere, follow-up și escaladare |
 | `pmorg.autonomy.policy` | nivelul permis pentru fiecare clasă de acțiune |
 | `pmorg.capability.registry` | universul de ancore și acțiuni publicat |
+| `pmorg.vocabulary.proposal` / `pmorg.anchor.reconciliation` | singurele cozi HIL semantice: vocabular nou și matching de ancoră ambiguu cu consecință; approvals/outcomes business sunt fluxuri de autoritate separate |
+| `pmorg.provenance.gap` | suspiciune deterministă de efect formal fără proveniență suficientă |
 | outbox, inbox, task run și events | execuție sigură și auditabilă |
 
 ### 2.2 În Semantic Core
@@ -105,19 +107,25 @@ Reguli:
 
 ```text
 proposed
-  → under_review
   → validated
   → disputed
   → superseded
   → expired
 
-proposed / under_review
-  → rejected
+proposed → rejected
 ```
 
 Un claim `validated` poate deveni `disputed` când apare o contradicție și
 `superseded` când o afirmație mai nouă îl înlocuiește pentru un interval.
 Nicio tranziție nu șterge evidence ori verdictul anterior.
+
+Interpretarea unui claim nu are stare sau coadă umană `under_review`.
+Assessments și policy engine-ul produc automat `validated` ori `rejected`.
+Dacă ancora este ambiguă cu consecință, evidence rămâne durabilă, dar nu se
+creează încă un `Claim`/`ClaimProposal`; se deschide
+`pmorg.anchor.reconciliation`. După alegerea ancorei, pipeline-ul reexecută
+automat extracția și creează o propunere nouă. Operatorul nu vede și nu
+editează `claim_kind`, ownerul, termenul, predicatul sau valoarea.
 
 `fact`, `decision`, `commitment`, `preference`, `observation`, `hypothesis`
 și `external_mention` sunt tipuri semantice, nu înlocuitori pentru statusul
@@ -145,9 +153,14 @@ Citirea live din Odoo este o probă importantă, nu un shortcut universal.
 Faptul că un record curent pare compatibil nu înlocuiește proveniența,
 autoritatea și timpul.
 
-Autovalidarea este refuzată implicit când politica cere validare
-independentă. Modelul poate recomanda un verdict, dar nu își acordă singur
-autoritate.
+Autovalidarea este refuzată implicit când politica cere separarea serviciului
+de policy de proposer. Modelul poate produce claim proposal și metadata de
+assessment, dar nu emite verdict și nu își acordă autoritate.
+
+Validatorul din acest context este policy engine-ul sau un serviciu
+determinist autorizat. O persoană poate produce evidence în fluxul normal de
+business, poate aproba un efect sau verifica un outcome, dar nu adnotează
+interpretarea claim-ului într-o coadă de review.
 
 ## 6. Timpul
 
@@ -202,8 +215,29 @@ Un termen necunoscut poate fi:
 - alias candidat;
 - întrebare de clarificare.
 
-Nu poate deveni automat tip de ancoră, relație canonică sau comandă. Aliasurile
-și pack-urile noi trec prin review, versionare și publicare explicită.
+Nu poate deveni automat tip de ancoră, relație canonică sau comandă. Numai
+aliasurile recurente, tipurile/pack-urile noi și matching-ul ambiguu de ancoră
+cu consecință intră în guvernanță umană, apoi în versionare și publicare
+explicită. Interpretarea mesajului nu intră în acel workspace.
+
+Itemul de guvernanță conține numai categoria (`recurring_entity`,
+`anchor_type`, `ambiguous_anchor_match`), candidații Odoo live, evidence refs,
+scope-ul, consecința, registry version și verdictul. Nu conține câmpuri
+editabile pentru claim kind/predicate/value, owner ori termen. Rezolvarea
+produce o versiune nouă de alias/pack/binding și relansează automat pipeline-ul;
+nu validează ea însăși claim-ul.
+
+`pmorg.provenance.gap` păstrează în Odoo:
+
+```text
+id · organization/company · detector_class · effect_ref · anchor_refs
+window_start/end · materiality_policy_ref · materiality_score
+status(open|explained|dismissed) · explanation_evidence_refs
+memory_receipt_refs · detected_at · resolved_at · dedup_key
+```
+
+Conținutul explicației rămâne în evidence/Semantic Core; control-plane-ul
+Odoo păstrează numai referințele și lifecycle-ul operațional.
 
 ## 9. Recall
 
@@ -235,18 +269,26 @@ Orice mesaj oficial — din UI sau gateway — trece determinist prin:
 
 ```text
 1. validare OrganizationContext și identity binding
-2. capturare durabilă SourceArtifact + Evidence
-3. recall autorizat
-4. execuție cognitivă Onyx
-5. preflight pentru fiecare action/tool
-6. capturare claim/command proposals
-7. validare semantică și comandă Odoo controlată
-8. persistarea receipts și a răspunsului
+2. poartă tranzitorie de intimitate/secrete, înaintea oricărei stocări PMORG
+3. capturare durabilă SourceArtifact + Evidence numai dacă poarta permite
+4. emitere `AdmittedMessage` fără content/ref/hash către Hermes/runner/runtime
+5. recall autorizat
+6. execuție cognitivă Onyx
+7. preflight pentru fiecare action/tool
+8. capturare claim/command proposals
+9. validare semantică și comandă Odoo controlată
+10. persistarea receipts și a răspunsului
 ```
 
 Endpointul generic de chat care ar ocoli acest pipeline este dezactivat sau
-inaccesibil în distribuția PMORG. Pașii 1, 2, 5, 6 și 7 nu sunt tool-uri pe
+inaccesibil în distribuția PMORG. Pașii 1–5 și 7–9 nu sunt tool-uri pe
 care modelul alege dacă să le apeleze.
+
+Un refuz la pasul 2 nu persistă content, content reference, hash, transcript,
+chunk, embedding, evidence ori prompt. Receipt-ul minimal conține numai
+identificatorul mesajului, versiunea politicii, un reason code fără ecou din
+conținut și timpul recepției.
+Hermes/runnerul nu vede și nu persistă envelope-ul raw înaintea pasului 4.
 
 ## 11. Izolarea organizațională
 

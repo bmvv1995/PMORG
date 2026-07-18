@@ -2,8 +2,8 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1` |
-| Versiune | `3.0-baseline.1` |
+| Status | Accepted — requirements baseline `RB-1/C1` |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 | Bază de implementare | fork guvernat al Onyx Community Edition; commitul exact se fixează la bootstrap |
 | Ancoră de domeniu | Odoo 19 Community, cu revizia exactă fixată în manifestul fiecărui build |
@@ -67,6 +67,8 @@ Odoo și Hermes ca sisteme contractuale distincte.
 - Niciun rezultat nu este închis fără criterii, dovezi și autoritatea cerută.
 - O informație contradictorie nu este ascunsă și o informație nouă nu șterge
   istoria pe care o înlocuiește.
+- O schimbare materială formală fără proveniență consemnată produce o
+  suspiciune măsurabilă și o buclă de clarificare, nu o acuzație.
 
 ## 4. Modelul produsului
 
@@ -136,6 +138,12 @@ context. Ele nu transformă singure un text în adevăr organizațional.
 11. Orice verdict de evaluare este invalid dacă SUT poate citi oracle-ul,
     gold labels sau scorerul.
 12. **Niciun test, benchmark sau pilot nu rulează în producție.**
+13. Interpretarea memoriei este automată; omul guvernează numai vocabularul și
+    matching-ul de ancoră ambiguu cu consecință.
+14. Privacy/secrets gate rulează după identitate și înaintea oricărei stocări,
+    indexări sau execuții cognitive.
+15. Efectele materiale fără proveniență sunt detectate determinist și intră în
+    rata de acoperire; un gap rămâne suspiciune, nu verdict despre o persoană.
 
 ## 7. În scop
 
@@ -163,9 +171,11 @@ context. Ele nu transformă singure un text în adevăr organizațional.
 ## 9. Relația cu v2 și implementările existente
 
 PMORG v2 și sandboxurile SB2/SB3 rămân referințe înghețate. V3 preia
-invariantele, contractele utile, scenariile și testele, dar nu presupune că
+invariantele, comportamentele utile, scenariile și testele, dar nu presupune că
 schema `aipm`, addon-urile prototip sau topologia lor sunt producție-ready.
-Portarea se face prin teste de contract, nu prin copiere nediferențiată.
+Wire contractele v2 sunt superseded explicit pentru v3; portarea se face prin
+[mapare și teste de contract](14-V2-CONTRACT-SUPERSESSION.md), nu prin copiere
+nediferențiată sau aliasuri tăcute.
 
 Documentele v3 sunt normative pentru noua generație acolo unde contrazic
 direcția v2. Implementarea curentă v1/v2 nu trebuie descrisă ca v3.
@@ -178,11 +188,12 @@ direcția v2. Implementarea curentă v1/v2 nu trebuie descrisă ca v3.
 4. [arhitectura](01-ARCHITECTURE.md);
 5. [modelul de domeniu și Semantic Core](02-DOMAIN-MODEL.md);
 6. [contractele v1](09-CONTRACTS.md);
-7. [state machines și politicile](11-STATE-MACHINES-POLICIES.md);
-8. [scenariul canonic XNX](10-XNX-REFERENCE-SCENARIO.md);
-9. [MVP-ul](04-MVP.md);
-10. [criteriile de acceptare și trasabilitatea](12-ACCEPTANCE-TRACEABILITY.md);
-11. [evaluarea](06-EVALUATION.md);
-12. [matricea de migrare v2 → v3](05-V2-MIGRATION-MATRIX.md);
-13. [politica fork-ului Onyx](07-ONYX-UPSTREAM-POLICY.md);
-14. [profilurile organizaționale de conformitate](13-ORGANIZATION-PROFILES.md).
+7. [supersession-ul contractelor v2](14-V2-CONTRACT-SUPERSESSION.md);
+8. [state machines și politicile](11-STATE-MACHINES-POLICIES.md);
+9. [scenariul canonic XNX](10-XNX-REFERENCE-SCENARIO.md);
+10. [MVP-ul](04-MVP.md);
+11. [criteriile de acceptare și trasabilitatea](12-ACCEPTANCE-TRACEABILITY.md);
+12. [evaluarea](06-EVALUATION.md);
+13. [matricea de migrare v2 → v3](05-V2-MIGRATION-MATRIX.md);
+14. [politica fork-ului Onyx](07-ONYX-UPSTREAM-POLICY.md);
+15. [profilurile organizaționale de conformitate](13-ORGANIZATION-PROFILES.md).
