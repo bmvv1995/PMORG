@@ -67,6 +67,13 @@ Stările `under_review` nu se importă și nu se sintetizează: v3 nu are review
 uman al interpretării claim-ului. Matching-ul de ancoră ambiguu intră în
 obiectul separat `pmorg.anchor.reconciliation`.
 
+Exemplu de conservare a autorității umane: formularea legacy „Paul validează”
+se portează ca evidence/atestare sau autoritate business furnizată de Paul,
+urmată de verdictul semantic automat al policy engine-ului. Paul poate aproba
+efectul ori verifica outcome-ul conform ADR-005; nu primește capabilitatea
+`validate_claim`. Separarea nu elimină autoritatea umană, ci o împiedică să
+devină adnotare manuală asupra interpretării claim-ului.
+
 ## 3. Maparea erorilor memoriei
 
 | Eroare v2 | Eroare v3 | Observație |
@@ -178,3 +185,24 @@ lipsă. Importerul ordonează evenimentele reconstructibile după
 agregată v3 nouă, monotonă; valorile legacy rămân numai în provenance. După
 import, răspunsul ori tick-ul scadent folosește
 `pmorg.task.activate_due`, apoi un run v3 nou.
+
+Testul adaptorului pentru S1/S9 este obligatoriu și este urmărit prin
+[`F-MIG-LONG-001`](12-ACCEPTANCE-TRACEABILITY.md#8-g3-f--longitudinalitate-și-recovery):
+
+1. nota legacy plus conversation, outbound message și delivery receipt
+   corelate produce exact un `pmorg.intervention` și contor derivat `1`;
+2. nota legacy fără delivery receipt rămâne `reference-only`, produce zero
+   intervenții v3 și nu incrementează contorul;
+3. replay-ul fixture-ului produce același event/receipt, fără al doilea
+   follow-up ori altă versiune agregată.
+
+## 6. Pointer normativ pentru refuzul porții de intimitate
+
+Contractul explicit este în
+[`MessageEnvelope` și `PrivacyRejectionReceipt`](09-CONTRACTS.md#4-messageenvelope),
+iar proba obligatorie este
+[`C-PRIVACY-001`](12-ACCEPTANCE-TRACEABILITY.md#5-g3-c--semantic-core).
+La refuz, singurul artefact durabil este receipt-ul metadata-only; nu se
+persistă conținut, fragment, `content_ref`, `content_hash`, transcript,
+evidence, chunk, prompt ori checkpoint Hermes/runner și nu se emite
+`AdmittedMessage`.
