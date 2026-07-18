@@ -3,7 +3,7 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted |
-| Baseline | `RB-1` |
+| Baseline | `RB-1/C1` |
 | Contract version | `1.0` |
 | Data | 2026-07-18 |
 
@@ -30,7 +30,7 @@ draft → clarifying → planned → awaiting_confirmation → active
 ```
 
 `cancelled` este terminal și poate fi atins din orice stare ne-terminală
-numai prin decizie autorizată. `closed` este terminal în RB-1; o nevoie nouă
+numai prin decizie autorizată. `closed` este terminal în `RB-1/C1`; o nevoie nouă
 produce o inițiativă legată prin `followup_of`, nu rescrierea celei închise.
 
 ### 2.2 Tranziții
@@ -94,9 +94,9 @@ starea persistentă anterioară.
 | `running` | `review` | conflict, rezultat tardiv ori ambiguitate blocking |
 | `running` | `completed` | execuția a produs rezultatul așteptat și receipt |
 | orice activă | `failed` | eroare clasificată după epuizarea retry-urilor |
-| `waiting_response` | `ready` | răspuns corelat sau timeout scadent |
-| `waiting_approval` | `ready` | approval rezolvat |
-| `scheduled` | `ready` | `next_check_at` scadent |
+| `waiting_response` | `ready` | `pmorg.task.activate_due`, pe răspuns corelat sau timeout scadent |
+| `waiting_approval` | `ready` | `pmorg.task.activate_due`, pe approval rezolvat |
+| `scheduled` | `ready` | `pmorg.task.activate_due`, când `next_check_at` este scadent |
 | `blocked` | `ready` | blocker rezolvat și reconciliat |
 | `review` | `ready` | reviewerul autorizează reluarea |
 | `review` | `completed` | reviewerul acceptă rezultatul existent |
@@ -129,29 +129,34 @@ Pentru profilul MVP:
 
 - lease inițial: 5 minute virtuale;
 - heartbeat recomandat: la maximum 60 secunde virtuale;
-- maximum 3 încercări pentru erori retryable;
-- backoff virtual: 1, 5 și 15 minute;
+- maximum 4 încercări totale pentru erori retryable: apelul inițial plus cel
+  mult 3 retries;
+- backoff virtual înaintea celor 3 retries: 1, 5 și 15 minute;
 - efectele externe non-idempotente nu sunt retry-uite fără reconciliation;
 - un run `expired` nu poate finaliza taskul fără review.
 
 Aceste valori sunt configurație de profil, nu constante globale de produs.
+Încercările retryable reiau aceeași comandă acceptată și același
+`request_hash` din inbox; nu creează command ID ori efect nou. O respingere
+de domeniu non-retryable rămâne terminală pentru cheia sa. După al patrulea
+eșec tehnic, receipt-ul final devine `rejected` cu `RETRY_EXHAUSTED` și
+`retryable=false`; aceeași cheie îl rejoacă, nu pornește o buclă nouă.
 
 ## 6. Claim semantic
 
 ### 6.1 Stări
 
 ```text
-proposed → under_review → validated → disputed → superseded
-                 ↘ rejected                 ↘ expired
+proposed → validated → disputed → superseded
+        ↘ rejected                 ↘ expired
 ```
 
 ### 6.2 Reguli
 
 | Tranziție | Condiții |
 |---|---|
-| `proposed → under_review` | evidence existentă, context și claim schema valide |
-| `under_review → validated` | toate assessments obligatorii PASS și validator autorizat |
-| `proposed/under_review → rejected` | probă invalidă, autoritate absentă sau contradicție fatală |
+| `proposed → validated` | toate assessments obligatorii PASS și policy engine/validator de sistem autorizat |
+| `proposed → rejected` | probă invalidă, autoritate absentă sau contradicție fatală |
 | `validated → disputed` | contradicție materială nouă ori contestare autorizată |
 | `validated/disputed → superseded` | claim nou validat, scope și interval de înlocuire explicite |
 | `validated → expired` | politica sau `valid_to` încheie valabilitatea fără înlocuitor |
@@ -160,6 +165,12 @@ proposed → under_review → validated → disputed → superseded
 Un claim `disputed` nu produce efect nou dacă politica acțiunii cere adevăr
 necontestat. Statusurile `rejected`, `superseded` și `expired` nu șterg
 evidence ori assessments.
+
+Nu există tranziție de claim către review uman. Pentru o ancoră ambiguă cu
+consecință, claim-ul nu este creat: evidence deschide un
+`pmorg.anchor.reconciliation`, iar reviewerul vede și modifică numai
+matching-ul ancorei. După rezolvare, extracția/propunerea și assessments sunt
+reluate automat; omul nu etichetează kind, owner, termen, predicat sau valoare.
 
 ## 7. Plan version
 
@@ -193,13 +204,36 @@ proposed/confirmed → cancelled | superseded
 ## 9. Contradiction
 
 ```text
-open → under_review → resolved | dismissed
+open → awaiting_resolution → resolved | dismissed
 ```
 
 `resolved` păstrează verdictul, resolverul, evidence și efectul asupra
 claims. `dismissed` înseamnă că relația propusă nu reprezenta o contradicție;
 nu șterge claims. O contradicție blocking deschisă împiedică formalizarea sau
 închiderea prevăzută de politică.
+
+`awaiting_resolution` cere evidence ori o decizie business nouă prin fluxul
+normal; nu este o coadă de adnotare a interpretării. Policy engine-ul aplică
+efectul asupra claims după ce noile receipts sunt disponibile.
+
+### 9.1 Provenance gap
+
+```text
+open → explained
+    ↘ dismissed
+```
+
+| Tranziție | Condiție |
+|---|---|
+| creare `open` | un detector D1–D5 reproduce semnalul, fereastra și materiality policy; dedup key-ul nu există activ |
+| `open → explained` | un nou turn guvernat produce evidence/claim/receipt care acoperă efectul și este legat explicit de gap |
+| `open → dismissed` | semnalul este demonstrat non-material ori deja acoperit; motivul și politica sunt persistate |
+
+Detectorul nu scrie `explained` pe baza textului generat de model și nu
+deschide review de interpretare. Dedup key-ul este
+`(organization, detector_class, effect_ref, policy_window)`; rerularea
+aceluiași detector nu dublează gap-ul. Redeschiderea cere efect sau fereastră
+nouă și păstrează legătura cu obiectul anterior.
 
 ## 10. Approval
 
@@ -211,7 +245,8 @@ Reguli:
 
 - numai `pending` poate fi rezolvat;
 - actorul care a propus acțiunea nu poate aproba dacă politica cere four-eyes;
-- `approved` este legat de command hash, scope și expiry; modificarea comenzii
+- `approved` este legat de `action_hash`-ul pre-approval,
+  `intent_state_hash`, scope și expiry; modificarea proiecției acțiunii
   cere approval nou;
 - un approval retry-uit cu aceeași cheie nu creează a doua rezoluție;
 - expirarea nu este echivalentă cu respingerea;
@@ -220,7 +255,7 @@ Reguli:
 ## 11. Outcome verification
 
 ```text
-pending_evidence → ready_for_verification → under_review
+pending_evidence → ready_for_verification → awaiting_business_verification
                                       → verified
                                       → rejected
                                       → disputed
@@ -229,15 +264,19 @@ pending_evidence → ready_for_verification → under_review
 | Tranziție | Condiție |
 |---|---|
 | `pending_evidence → ready_for_verification` | toate tipurile obligatorii de dovadă sunt referite |
-| `ready_for_verification → under_review` | politica cere judecată/validator uman |
+| `ready_for_verification → awaiting_business_verification` | politica cere judecată/validator uman asupra rezultatului business |
 | `ready_for_verification → verified` | criteriile complet mecanice trec și politica permite |
-| `under_review → verified` | validator autorizat, fără conflict blocking |
-| `under_review → rejected` | criteriu neîndeplinit sau dovadă invalidă |
+| `awaiting_business_verification → verified` | validator business autorizat, fără conflict blocking |
+| `awaiting_business_verification → rejected` | criteriu neîndeplinit sau dovadă invalidă |
 | orice pre-verdict → disputed | dovezi incompatibile ori contestare autorizată |
-| `disputed → under_review` | evidence suplimentară și reviewer asignat |
+| `disputed → awaiting_business_verification` | evidence suplimentară și reviewer business asignat |
 
 Inițiativa trece `verifying → closed` numai dacă toate outcomes obligatorii
 sunt `verified`.
+
+Această verificare este autoritate asupra rezultatului și efectului business,
+nu HIL asupra semanticii unui claim. Validatorul business furnizează evidence
+și verdict de outcome; nu poate edita ori aproba interpretarea claim-ului.
 
 ## 12. Niveluri de autonomie
 
@@ -252,6 +291,10 @@ sunt `verified`.
 LLM-ul nu își alege nivelul. Odoo/policy engine îl rezolvă după organizație,
 companie, action type, obiect, impact și actor.
 
+`validate_claim` nu este o acțiune din această matrice: este o tranziție
+internă, automată, system-only a policy engine-ului Semantic Core. Nu poate fi
+`approval_required` și nu este expusă omului ori modelului.
+
 ## 13. Politica canonică `ORG-DIST-XNX-v1`
 
 | Acțiune | Nivel/regulă |
@@ -265,7 +308,6 @@ companie, action type, obiect, impact și actor.
 | plan nou ori schimbare de responsabil/termen material | `approval_required` |
 | creare task operațional de reconciliere stoc | `approval_required` |
 | modificare `stock.move`/`stock.picking` sau cantitate prin agent/runtime | `prohibited` în MVP; operarea umană Odoo rămâne permisă sub ACL |
-| validare claim XNX | `approval_required`, validator diferit de autor |
 | verificare outcome și închidere inițiativă | `approval_required` |
 
 Praguri temporale XNX:

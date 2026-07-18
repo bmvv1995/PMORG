@@ -2,11 +2,11 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted |
-| Baseline | `RB-1` |
-| Versiune produs | `3.0-baseline.1` |
+| Status | Accepted, cu corrigendum implementabil |
+| Baseline | `RB-1/C1` |
+| Versiune produs | `3.0-baseline.2` |
 | Data acceptării | 2026-07-18 |
-| Scope | MVP structural și longitudinal, Gates A–F |
+| Scope | MVP structural și longitudinal, G3-A–G3-F |
 
 ## 1. Scopul baseline-ului
 
@@ -30,7 +30,7 @@ configurația Hermes. Acestea sunt selecții de implementare/calificare care se
 5. definiția produsului, arhitectura și modelul de domeniu v3;
 6. documentele v2 și implementările v1/SB2/SB3, exclusiv ca referință.
 
-O schimbare de fond după `RB-1` cere ADR nou, impact asupra cerințelor/testelor
+O schimbare de fond după `RB-1/C1` cere ADR nou, impact asupra cerințelor/testelor
 și versiune nouă a baseline-ului.
 
 ## 3. Cerința principală
@@ -89,21 +89,25 @@ O schimbare de fond după `RB-1` cere ADR nou, impact asupra cerințelor/testelo
 | `MEM-008` | Scorul vectorial SHALL NOT acorda acces, autoritate ori status de adevăr. |
 | `MEM-009` | Semantic Ledger SHALL supraviețui ștergerii și reconstruirii indexului Onyx/search. |
 | `MEM-010` | Semantic Core SHALL expune același model semantic prin API intern și MCP extern standard/versionat. |
+| `MEM-011` | Interpretarea claim-urilor SHALL fi automată; oamenii și agentul cognitiv SHALL NOT emite verdict, approval ori tranziție de claim. HIL semantic SHALL fi limitat la entități/tipuri noi și matching de ancoră ambiguu cu consecință; aprobările efectelor și verificarea outcomes business rămân fluxuri distincte. |
+| `MEM-012` | Controllerul determinist din addon/control-plane-ul PMORG Odoo SHALL detecta gaps de proveniență pentru efectele materiale folosind receipts Semantic Core, SHALL păstra lifecycle-ul lor în Odoo și SHALL raporta rata de acoperire fără verdict despre persoane. |
 
 ## 7. Cerințe de interacțiune și orchestrare
 
 | ID | Cerință obligatorie |
 |---|---|
 | `INT-001` | Fiecare turn oficial SHALL trece prin Turn Coordinator. |
-| `INT-002` | UI-ul PMORG și calea Gateway → Hermes/runner SHALL ajunge în același Turn API și aceeași politică. |
+| `INT-002` | UI-ul PMORG și Gateway SHALL intra mai întâi în Turn Admission; Hermes/runnerul SHALL primi numai `AdmittedMessage`, apoi SHALL continua în același Turn API și aceeași politică. |
 | `INT-003` | Identitatea expeditorului SHALL proveni structural din binding; SHALL NOT fi ghicită din text. |
-| `INT-004` | Mesajul SHALL fi capturat durabil ca evidence înainte de execuția cognitivă care îl interpretează. |
+| `INT-004` | Orice mesaj admis de `INT-006` SHALL fi capturat durabil ca evidence înainte de execuția cognitivă care îl interpretează. |
 | `INT-005` | Fiecare action SHALL avea preflight determinist și receipt. |
+| `INT-006` | Fiecare mesaj SHALL trece prin privacy/secrets gate după identity binding și înainte de orice transcript, evidence, index, prompt sau checkpoint/log Hermes; refuzul SHALL persista numai metadata minimă fără conținut, referință ori hash și SHALL NOT ajunge la Hermes/runner/runtime. |
 | `ORC-001` | Hermes SHALL fi orchestratorul țintă; runnerul determinist SHALL demonstra același contract în MVP. |
 | `ORC-002` | Hermes SHALL apela `execute_cognitive_step`; SHALL NOT folosi chat generic drept contract longitudinal. |
 | `ORC-003` | O execuție cognitivă SHALL fi bounded, versionată și idempotentă. |
 | `ORC-004` | Scheduling, retry și checkpoint Hermes SHALL NOT deveni starea business canonică. |
 | `ORC-005` | Controller-ele SHALL executa cel mult un pas idempotent și SHALL persista următoarea verificare. |
+| `ORC-006` | Un controller system-only SHALL reactiva idempotent munca `waiting_response`, `waiting_approval` sau `scheduled` pe eveniment corelat ori timp trusted scadent înainte de un claim nou. |
 
 ## 8. Cerințe de platformă și securitate
 
@@ -119,6 +123,7 @@ O schimbare de fond după `RB-1` cere ADR nou, impact asupra cerințelor/testelo
 | `SEC-003` | Secretele SHALL NOT apărea în evidence, prompturi, logs ori receipts. |
 | `SEC-004` | Prompt injection SHALL NOT activa un tool, anchor type sau nivel de autonomie nepermis. |
 | `SEC-005` | Memoria personală Onyx SHALL fi dezactivată pentru agenții PMORG în MVP. |
+| `SEC-006` | Telemetria și update checks upstream SHALL fi dezactivate; SUT SHALL avea egress deny-by-default, cu excepții allow-listed și auditate numai în gate-urile care le cer. |
 
 ## 9. Cerințe de evaluare
 
@@ -142,7 +147,7 @@ MVP-ul include:
 - runner determinist, canal simulat și ceas virtual;
 - trei profiluri organizaționale;
 - vertical slice XNX și scenariile longitudinale;
-- Gates A–F din [MVP](04-MVP.md).
+- G3-A–G3-F din [MVP](04-MVP.md).
 
 MVP-ul exclude:
 
@@ -154,11 +159,11 @@ MVP-ul exclude:
 - fine-tuning, pilot și producție.
 
 Aceste excluderi nu elimină responsabilitățile produsului. Ele amână numai
-implementarea concretă la Gate G, H sau I.
+implementarea concretă la G3-G, G3-H sau G3-I.
 
-## 11. Deciziile înghețate în RB-1
+## 11. Deciziile înghețate în `RB-1/C1`
 
-ADR-309–314 sunt acceptate cu următoarea interpretare:
+ADR-309–316 sunt acceptate cu următoarea interpretare:
 
 - Turn Coordinator este obligatoriu;
 - bazele și rolurile autoritare sunt separate;
@@ -167,6 +172,12 @@ ADR-309–314 sunt acceptate cu următoarea interpretare:
 - CE-only se aplică MVP-ului și datelor sintetice; strategia pentru date reale
   necesită decizie separată de permission-aware retrieval/licențiere;
 - longitudinalitatea deterministă este parte din MVP, nu etapă opțională.
+- HIL asupra semanticii este exclusiv vocabular/ancoră; claim-urile nu au
+  coadă umană de interpretare, iar approvals/outcomes business rămân fluxuri
+  de autoritate distincte;
+- detectorul golului este componentă v3, cu stare Odoo și digest Onyx-PMORG;
+- `pmorg-contracts/1.0` supersedează pentru v3 wire contractele v2 conform
+  [mapării normative](14-V2-CONTRACT-SUPERSESSION.md).
 
 ## 12. Variabile rămase, fără ambiguitate de cerință
 
@@ -176,26 +187,28 @@ Următoarele se decid în bootstrap și se fixează în manifest:
 - commitul și digestul Odoo;
 - versiunea PostgreSQL/search/object store;
 - numele finale ale pachetelor și tabelelor;
-- modelul/providerul pentru Gate G;
-- forma exactă a adaptorului Hermes pentru Gate H;
-- primul canal real pentru Gate I.
+- modelul/providerul pentru G3-G;
+- forma exactă a adaptorului Hermes pentru G3-H;
+- primul canal real pentru G3-I.
 
 Niciuna nu poate modifica ownership-ul, closed world-ul, contractele de
 business sau gate-urile fără ADR și baseline nou.
 
 ## 13. Readiness pentru implementare
 
-`RB-1` este requirements-ready: cerințele, semantica schemelor, scenariile,
+`RB-1/C1` este requirements-ready: cerințele, semantica schemelor, scenariile,
 tranzițiile și pragurile sunt definite în această suită. Nu mai există o
-decizie de produs deschisă care să blocheze Gates A–F.
+decizie de produs deschisă care să blocheze G3-A–G3-F.
 
 Prima etapă de implementare materializează, fără reinterpretare:
 
 1. contractele din `09-CONTRACTS.md` ca JSON Schema și contract tests;
-2. XNX și celelalte profiluri ca YAML public, oracle privat și `world.lock`;
-3. state machines/politicile ca tabele executabile și teste de tranziție;
-4. criteriile A–F ca probe automate și artefacte de verdict;
-5. repository-ul `PMORG-Platform` dintr-un Onyx upstream curat și fixat.
+2. adaptorul de portare și testele de supersession din
+   `14-V2-CONTRACT-SUPERSESSION.md`, fără a-l expune ca API v3;
+3. XNX și celelalte profiluri ca YAML public, oracle privat și `world.lock`;
+4. state machines/politicile ca tabele executabile și teste de tranziție;
+5. criteriile G3-A–G3-F ca probe automate și artefacte de verdict;
+6. repository-ul `PMORG-Platform` dintr-un Onyx upstream curat și fixat.
 
 Acestea sunt livrabile de implementare, nu clarificări suplimentare ale
 cerinței.

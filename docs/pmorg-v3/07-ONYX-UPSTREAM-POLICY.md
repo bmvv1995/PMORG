@@ -2,8 +2,8 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1` |
-| Versiune | `3.0-baseline.1` |
+| Status | Accepted — requirements baseline `RB-1/C1` |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 
 ## 1. Obiectiv
@@ -19,7 +19,7 @@ explicite.
 
 ## 2. Repository-uri
 
-Modelul acceptat în `RB-1` este:
+Modelul acceptat în `RB-1/C1` este:
 
 | Repo | Responsabilitate |
 |---|---|
@@ -205,6 +205,24 @@ pentru permission-aware retrieval în knowledge-ul Onyx.
 - prompt injection nu activează un action nepermis;
 - secretele și tokens nu apar în traces ori evidence;
 - advisories upstream pentru baseline și dependențe sunt triaged.
+
+### Telemetrie și egress runtime
+
+- distribuția PMORG pornește cu telemetria/analytics upstream și update checks
+  dezactivate prin configurație versionată și testată;
+- la `G3-A`–`G3-F`, rețeaua SUT este deny-by-default și nu are egress; probele
+  negative verifică DNS, HTTP(S) și încercările proceselor de a suna acasă;
+- la `G3-G`, singurul egress permis este proxy-ul LLM declarat în manifest,
+  cu allow-list, buget, redacție și jurnal local; providerul nu este accesat
+  direct de servicii;
+- observabilitatea rămâne locală în sandbox. Activarea unei destinații externe
+  cere decizie explicită, endpoint, schema datelor, retenție și test de opt-out;
+- un upgrade care adaugă endpoint, SDK sau job de telemetrie nou este schimbare
+  de seam/egress și blochează calificarea până la inventariere și test.
+
+Raportul de upgrade include configurația efectivă, conexiunile observate și
+rezultatul probei de reachability. Absența unui eveniment în logul aplicației
+nu este dovadă suficientă; controlul se verifică și la nivel de rețea.
 
 ## 9. Criteriul de abandon al fork-ului
 

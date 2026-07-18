@@ -2,8 +2,8 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1` |
-| Versiune | `3.0-baseline.1` |
+| Status | Accepted — requirements baseline `RB-1/C1` |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 | Natură | arhitectură țintă, nu descrierea implementării curente |
 
@@ -35,6 +35,7 @@ flowchart LR
     UI["PMORG UI<br/>fork Onyx"]
     CH["Canale externe"]
     G["Communication Gateway"]
+    A["PMORG Turn Admission<br/>identity + privacy + evidence admission"]
     H["Hermes<br/>orchestrator persistent"]
     P["PMORG Platform<br/>cognitive runtime + knowledge"]
     S["PMORG Semantic Core<br/>ledger + validation"]
@@ -43,8 +44,13 @@ flowchart LR
     U <--> UI
     U <--> CH
     CH <--> G
-    G <--> H
-    UI <--> P
+    G -->|"inbound tranzitoriu"| A
+    UI -->|"inbound tranzitoriu"| A
+    A -->|"admitted external receipt"| H
+    A -->|"admitted interactive receipt"| P
+    A -->|"accepted evidence"| S
+    H -->|"outbound delivery"| G
+    P --> UI
     H <-->|"execute_cognitive_step"| P
     P <--> S
     P <-->|"business commands + live reads"| O
@@ -62,6 +68,7 @@ implementări reale, cu contractele finale.
 |---|---|---|
 | companie, entități și stare business curentă | Odoo | se citesc live, nu din index |
 | inițiativă, plan aprobat, task, termen, rezultat formal | Odoo + addon-urile PMORG | `project.task` rămâne registrul muncii organizaționale |
+| gap de proveniență, materialitate și stare de remediere | Odoo + addon-urile PMORG | control-plane canonic; controllerul determinist rulează aici și compară efectele cu receipts din Semantic Core |
 | identitate organizațională și autoritate operațională | Odoo/PMORG | Onyx și gateway păstrează numai bindings |
 | registry de capabilități și anchor packs active | Odoo/PMORG | descriptor versionat și fingerprint-uit |
 | evidență, claims și istoricul validării | Semantic Core | append-only unde este relevant |
@@ -83,7 +90,8 @@ Regula de consistență este:
 ```text
 PMORG Platform
 ├── Interaction & Operator Workspace
-│   ├── chat, inbox și review
+│   ├── chat, operator inbox și guvernanță vocabular/ancoră
+│   ├── digest de gaps și rata de acoperire
 │   └── context organizațional obligatoriu
 ├── Cognitive Runtime (derivat din Onyx)
 │   ├── agent/model routing
@@ -223,6 +231,13 @@ heartbeat(context, task_id, run_id, lease_token)
 record_progress(...)
 record_waiting_response(...)
 schedule_next_check(...)
+activate_due(...)
+mark_managed(...)
+record_followup(...)
+record_escalation(...)
+reclaim_expired(...)
+record_provenance_gap(...)
+resolve_provenance_gap(...)
 propose_task(...)
 propose_plan_version(...)
 record_confirmation(...)
@@ -274,13 +289,29 @@ organization_id · identity_binding · conversation_id
 correlation_id · content_ref · content_hash · received_at
 ```
 
-Pentru canalele externe, envelope-ul ajunge la Hermes, iar Hermes invocă
-PMORG Turn API; în MVP, runnerul determinist ocupă locul Hermes. Gateway-ul
-nu pornește un al doilea flux cognitiv paralel. UI-ul PMORG poate invoca direct
-același Turn API pentru un pas interactiv bounded.
+Pentru inbound, `MessageEnvelope` este strict pre-admission și tranzitoriu.
+Gateway-ul sau UI-ul invocă mai întâi intrarea `admit_message` a PMORG Turn
+API. Ea face identity binding, privacy/secrets gate și, numai după acceptare,
+captura durabilă de evidence. Abia apoi emite un `AdmittedMessage` fără
+payload, `content_ref` sau `content_hash`. Pentru canal extern, Hermes/runnerul
+primește numai acest receipt admis și continuă Turn API; pentru UI, același
+receipt intră direct în pasul interactiv bounded. Gateway-ul nu pornește un al
+doilea flux cognitiv paralel.
 
 Identitatea vine structural din adaptor. Dacă binding-ul este absent sau
 ambiguu, mesajul intră în reconciliere și nu produce efect organizațional.
+
+După identity binding și înaintea oricărei persistențe PMORG, conținutul trece
+printr-o poartă deterministă de intimitate și secrete. Bufferul raw poate
+exista numai volatil în adaptor/Turn Admission: Hermes nu îl poate primi,
+checkpoint-a, loga sau programa, iar Onyx nu îl poate transforma în transcript
+ori prompt înaintea verdictului. La refuz, mesajul nu ajunge la Hermes,
+runner sau runtime-ul cognitiv, iar PMORG nu
+creează transcript Onyx, `SourceArtifact`, `Evidence`, chunk, embedding ori
+content hash. Se păstrează numai un receipt minim fără conținut sau referință
+la el: message ID, policy version, reason code și timpul recepției. Bufferul
+tranzitoriu al adaptorului de intrare — gateway sau UI — este șters conform
+politicii canalului.
 
 În Onyx UI, utilizatorul are aceeași identitate PMORG și același context de
 organizație. Transcriptul poate deveni evidență, dar nu este automat memorie
@@ -302,10 +333,43 @@ Controller-ele deterministe decid când există muncă:
 | Escalation | prag și politică | sinteză pentru decident |
 | Completion | criterii și dovezi mecanice | suficiența semantică |
 | Initiative | sănătatea agregată | replanificare |
+| Provenance Gap | efect material fără cauză, angajament fără închidere, referință-fantomă ori inițiativă fără urmă | formularea unei întrebări/digest, niciodată verdictul |
 
 Controllerul citește starea din Odoo și Semantic Core, execută cel mult un
 pas idempotent, persistă efectul și programează `next_check_at`. Un runtime
 nou poate continua de acolo.
+
+### 12.1 Detectorul golului de proveniență
+
+`pmorg.provenance.gap` este stare canonică în Odoo. Controllerul detectorului
+rulează în addon-ul/control-plane-ul PMORG din Odoo, nu în Semantic Core și nu
+în model. Query-urile sale deterministe compară tracking/events/materiality
+registry din Odoo cu evidence, bindings și receipts citite din Semantic Core
+prin API-ul de domeniu îngust:
+
+| Clasă | Semnal determinist |
+|---|---|
+| `D1` | câmp material schimbat fără evidence/claim ancorat în fereastra politicii |
+| `D2` | commitment formal rezolvat ori contrazis fără conversație/evidence de închidere |
+| `D3` | referință de tip „cum am stabilit” cu recall negativ pe ancora indicată |
+| `D4` | tranziții ale inițiativei fără evenimente conversaționale corelate |
+| `D5` | absență conversațională agregată; niciodată dosar individual |
+
+Un gap este o suspiciune, nu un verdict despre o persoană. Răspunsul intră ca
+mesaj nou prin Turn Coordinator; interpretarea rămâne automată. Omul intervine
+numai dacă explicația expune o entitate recurentă, un tip nou de ancoră sau un
+matching de ancoră ambiguu cu consecință.
+
+Onyx-PMORG proiectează un digest bounded, gaps după vechime/materialitate și
+rata de acoperire:
+
+```text
+schimbări materiale cu proveniență consemnată / total schimbări materiale
+```
+
+UI-ul nu oferă butoane pentru etichetarea kind/owner/termen/semantică. Poate
+deschide conversația de clarificare și workspace-ul separat de guvernanță a
+vocabularului/ancorei.
 
 ## 13. Moduri degradate
 

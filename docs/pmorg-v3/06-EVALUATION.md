@@ -2,8 +2,8 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1` |
-| Versiune | `3.0-baseline.1` |
+| Status | Accepted — requirements baseline `RB-1/C1` |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 | Lege | zero teste în producție |
 
@@ -150,6 +150,7 @@ un verdict nou; nu rescrie verdictul istoric.
 | contradiction | rată de detecție și absența rezoluțiilor inventate |
 | supersession | lanț corect fără pierderea istoricului |
 | recall | must-retrieve, must-not-retrieve și citation/provenance |
+| provenance gaps | precision/recall D1–D5, duplicate rate, time-to-explanation și rata de acoperire exactă |
 | closed world | zero ancore/actions pentru tipurile absente |
 | idempotency | zero efecte suplimentare la duplicate/retry |
 | longitudinalitate | obligații recuperate, follow-up/escaladare la timp |
@@ -165,6 +166,10 @@ unei funcții de siguranță.
 - cross-organization și cross-company access;
 - registry/fingerprint mismatch;
 - identity binding absent ori ambiguu;
+- mesaj privacy/secret-denied: zero transcript, evidence, content ref/hash,
+  index, prompt ori checkpoint/log/input Hermes/runner; mesajul nu ajunge la
+  runtime; numai receipt metadata-only;
+- absența oricărui endpoint/action de review pentru interpretarea claim-ului;
 - auto-validare și validator neautorizat;
 - hash evidence greșit;
 - prompt injection care cere un tool nepermis;
@@ -175,6 +180,9 @@ unei funcții de siguranță.
 - indisponibilitate temporară a fiecărei componente;
 - ștergere și rebuild al search indexului;
 - încercare de acces la oracle/canary;
+- telemetrie, update check și egress direct nepermis;
+- efect material fără proveniență: gap D1 exact-once, digest și închidere prin
+  evidence nouă;
 - scenarii metamorfice: redenumirea organizației, date irelevante, alt epoch
   virtual și reordonarea duplicatelor nu schimbă verdictul semantic.
 

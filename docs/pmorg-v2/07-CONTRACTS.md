@@ -8,6 +8,12 @@
 | Domeniu | Suprafața de comenzi, anvelopa, stările de orchestrare, outbox/inbox, erori |
 | Sursă normativă | [01-ARCHITECTURE](01-ARCHITECTURE.md) §5, §9; ADR-006, ADR-007 |
 
+> **Notă de supersession (2026-07-18):** conținutul acestui contract nu este
+> rescris și rămâne referința reproductibilă pentru v2/SB3. Pentru orice
+> implementare v3, wire contractul succesor este `pmorg-contracts/1.0`, iar
+> maparea normativă este în
+> [14-V2-CONTRACT-SUPERSESSION](../pmorg-v3/14-V2-CONTRACT-SUPERSESSION.md).
+
 Contractul definește **exact** ce poate cere runtime-ul (runner determinist,
 ulterior Hermes) de la Odoo. Nicio altă scriere nu este disponibilă
 runtime-ului (fail-closed, ADR-006). Schimbările incompatibile cer versiune

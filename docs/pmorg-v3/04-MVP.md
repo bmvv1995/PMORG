@@ -2,8 +2,8 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1` |
-| Versiune | `3.0-baseline.1` |
+| Status | Accepted — requirements baseline `RB-1/C1` |
+| Versiune | `3.0-baseline.2` |
 | Data | 2026-07-18 |
 | Orchestrare | runner determinist pe contractul final; fără Hermes în MVP |
 | Comunicare | canal simulat pe contractul final |
@@ -42,10 +42,13 @@ un dicționar in-memory drept Semantic Core sau un JSON fixture drept Odoo.
 flowchart LR
     W["Worldgen + fixture public"] --> O["Odoo test DB<br/>PMORG addons"]
     T["Trusted virtual clock"] --> R["Deterministic runner"]
-    R <--> C["Simulated channel"]
+    R -->|"outbound"| C["Simulated channel"]
     C <--> P["Scripted participants"]
+    C -->|"inbound raw"| A["Turn Admission<br/>identity + privacy + evidence"]
+    A -->|"AdmittedMessage"| R
     R <--> F["Onyx-PMORG fork"]
     F <--> S["Semantic Core"]
+    A --> S
     F <--> O
     S <--> O
     Q["Private oracle + scorer"] -. "no route / no credentials" .-> F
@@ -67,7 +70,8 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - identity binding Onyx user → `pmorg.identity`;
 - Turn Coordinator imposibil de ocolit în distribuția PMORG;
 - chat/turn persistence și knowledge retrieval de bază;
-- memory review minim: evidence, claim, status, ancore și timeline;
+- guvernanță minimă exclusiv pentru vocabular/ancoră, separată de claims;
+- digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
 - zero cod Enterprise în artefactul CE al MVP-ului.
@@ -79,9 +83,13 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - `project.task` extins pentru muncă human/agent/hybrid/monitor;
 - stare business separată de orchestration state;
 - `next_check_at`, wait condition, lease, state version și idempotency;
+- comandă system-only `activate_due` pentru reactivarea deterministă a
+  wait/schedule pe eveniment corelat ori timp trusted;
 - outcome, evidence reference, approval și verification;
 - capability registry și schema fingerprint;
 - anchor packs HR și Inventory opționale;
+- `pmorg.provenance.gap`, materiality registry și controllerul determinist D1
+  executat în addon/control-plane; D2–D5 se activează fazat prin profil;
 - comenzi înguste, outbox/inbox și audit;
 - UI minim Odoo pentru fallback și inspectarea stării formale.
 
@@ -93,7 +101,9 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - registry negotiation și ancore cu instance/company/fingerprint;
 - recall, timeline și query `as_of`;
 - API intern plus server MCP standard;
-- index/proiecție reconstruibilă fără pierderea ledgerului.
+- index/proiecție reconstruibilă fără pierderea ledgerului;
+- query-uri și receipts de evidence/binding/proveniență consumate de
+  controllerul D1 din Odoo, fără ownership asupra lifecycle-ului gap-ului.
 
 ### 4.4 Runner și canal simulat
 
@@ -137,7 +147,7 @@ sunt înghețate în
 Fiecare profil conține:
 
 - companie și instanță Odoo distincte;
-- owner, participant, validator și agent de test;
+- owner, participant, verificator business al outcome-ului și agent de test;
 - identity bindings complete și cazuri negative ambigue;
 - proiect, inițiativă, task și criteriu;
 - cel puțin o conversație ambiguă;
@@ -157,10 +167,11 @@ M0 demonstrează integrarea de bază, dar nu este încă MVP-ul:
 2. Odoo publică un task de clarificare prin outbox;
 3. runnerul revendică atomic taskul;
 4. participantul simulat primește întrebarea și răspunde;
-5. mesajul trece prin Turn Coordinator și devine evidence durabilă;
+5. mesajul trece prin identity + privacy gate și devine evidence durabilă;
 6. extractorul determinist produce un claim candidat;
 7. Semantic Core rezolvă ancora live și aplică validarea;
-8. validatorul distinct confirmă claim-ul;
+8. policy engine-ul autorizat validează automat claim-ul; persoana nu
+   adnotează interpretarea;
 9. runnerul propune un task operațional prin comanda controlată;
 10. Odoo creează taskul și receipt-ul fără efect duplicat;
 11. rezultatul primește dovadă și verificare;
@@ -185,17 +196,24 @@ dată. Varianta longitudinală include:
 3. restart Onyx-PMORG în `waiting_response`;
 4. restart runner și recuperarea lease-ului expirat;
 5. răspuns întârziat corelat cu conversația și taskul corect;
-6. claim contradictoriu păstrat și trimis la review;
+6. claim contradictoriu păstrat ca `disputed`, cu efectele blocking refuzate;
 7. decizie nouă care supersedează fără să șteargă istoricul;
 8. modificare concurentă în Odoo și optimistic conflict;
 9. indisponibilitate temporară Semantic Core și reluare din `memory_pending`;
 10. indisponibilitate Odoo, fără ancore ori efecte pretins curente;
 11. replanificare și escaladare;
 12. verificare și închiderea rezultatului după restart complet al stackului.
+13. o schimbare materială fără evidence în fereastră produce exact un gap D1,
+    iar explicația ulterioară îl închide printr-un nou turn guvernat.
 
 ## 9. Gate-uri
 
-### Gate A — fork și build reproducibil
+Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
+înseamnă vertical slice-ul v3, iar `V2-GD` în documentele frozen
+înseamnă calificarea longitudinală istorică din
+`docs/pmorg-v2/09-GATE-D-REPORT.md`; nu sunt același gate.
+
+### G3-A — fork și build reproducibil
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
@@ -203,7 +221,7 @@ dată. Varianta longitudinală include:
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 
-### Gate B — Odoo control plane și closed world
+### G3-B — Odoo control plane și closed world
 
 - profilul minimal se instalează fără HR/Inventory;
 - registry-ul reflectă exact modulele și pack-urile active;
@@ -211,21 +229,23 @@ dată. Varianta longitudinală include:
 - comanda generică ORM/SQL nu există;
 - claim, lease, idempotency și outbox/inbox trec testele concurente.
 
-### Gate C — Semantic Core real
+### G3-C — Semantic Core real
 
 - evidence, claims, autoritate, timp, contradiction și supersession persistă;
 - auto-validarea, hash-ul greșit și registry mismatch sunt refuzate;
+- privacy gate refuză înainte de transcript/evidence/index și nu păstrează
+  conținut, content reference sau hash;
 - query-urile `as_of` disting valid time de recorded time;
 - ștergerea search indexului nu afectează ledgerul, iar rebuildul este complet;
 - serverul expune MCP interoperabil, nu un protocol particular cu aceeași
   etichetă.
 
-### Gate D — vertical slice M0
+### G3-D — vertical slice M0
 
 Scenariul complet trece în `ORG-DIST`, fără LLM, Hermes sau canal real, iar
 auditul leagă inițiativa de rezultat.
 
-### Gate E — agnosticism organizațional
+### G3-E — agnosticism organizațional
 
 Același commit, aceleași imagini și checksum-uri trec scenariul comun în
 `ORG-MIN`, `ORG-SERV` și `ORG-DIST`. Diferă numai manifestul, modulele,
@@ -233,37 +253,40 @@ pack-urile, politicile și datele. Tipurile absente nu apar ca ancore, actions,
 formalizări sau controale UI tipizate. Ele pot apărea numai ca text brut ori
 `external_mention` etichetat necanonic în evidence/recall.
 
-### Gate F — longitudinalitate și recovery
+### G3-F — longitudinalitate și recovery
 
 Scenariul din §8, concretizat în
 [`XNX-LONG`](10-XNX-REFERENCE-SCENARIO.md), trece cu timp virtual și
 restarturi. Nicio obligație nu se pierde și niciun efect nu se dublează.
+Detectorul D1 păstrează exact-once lifecycle-ul gap-ului și calculează rata de
+acoperire contra oracle-ului sintetic.
 
-### Gate G — operator AI
+### G3-G — operator AI
 
 După MVP:
 
-- G1: modelul rulează cu participanți scriptați;
-- G2: modelul rulează cu personas limitate la adevărul lor privat;
-- G3: replici și seed-uri predeclarate raportează distribuție, cost și
+- G3-G1: modelul rulează cu participanți scriptați;
+- G3-G2: modelul rulează cu personas limitate la adevărul lor privat;
+- G3-G3: replici și seed-uri predeclarate raportează distribuție, cost și
   intervale de încredere.
 
-Outputul modelului nu poate ocoli gate-urile B/C.
+Outputul modelului nu poate ocoli G3-B/G3-C.
 
-### Gate H — Hermes
+### G3-H — Hermes
 
-- H1: adaptorul Hermes înlocuiește runnerul cu un agent determinist;
-- H2: Hermes rulează operatorul înghețat la Gate G fără schimbarea Odoo,
+- G3-H1: adaptorul Hermes înlocuiește runnerul cu un agent determinist;
+- G3-H2: Hermes rulează operatorul înghețat la G3-G fără schimbarea Odoo,
   Semantic Core, scenariilor sau scorerului.
 
-### Gate I — canal real în test
+### G3-I — canal real în test
 
 Un singur adaptor de canal se califică într-un mediu dedicat, cu identități și
-conturi de test. Abia după I se poate defini un pilot izolat, non-production.
+conturi de test. Abia după G3-I se poate defini un pilot izolat,
+non-production.
 
 ## 10. Definition of Done
 
-MVP-ul v3 este terminat când Gate-urile A–F sunt verzi și un raport generat
+MVP-ul v3 este terminat când G3-A–G3-F sunt verzi și un raport generat
 automat dovedește:
 
 1. identitatea exactă a buildului și a fixture-urilor;
@@ -276,7 +299,7 @@ automat dovedește:
 8. persistența ledgerului după reconstruirea indexului;
 9. auditul complet și artefactele de reproducere.
 
-M0 poate fi prezentat numai ca „vertical slice structural”. După A–F putem
-spune „persistență structurală validată cu runner determinist”. Numai după G
-și H2 putem descrie produsul integrat drept operator AI persistent validat în
-sandbox. Niciuna dintre aceste formulări nu autorizează producția.
+M0 poate fi prezentat numai ca „vertical slice structural”. După G3-A–G3-F
+putem spune „persistență structurală validată cu runner determinist”. Numai
+după G3-G și G3-H2 putem descrie produsul integrat drept operator AI persistent
+validat în sandbox. Niciuna dintre aceste formulări nu autorizează producția.
