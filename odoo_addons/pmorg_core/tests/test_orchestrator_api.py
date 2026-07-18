@@ -128,6 +128,79 @@ class TestOrchestratorApi(TransactionCase):
             1,
         )
 
+    def test_idempotency_conflict_same_key_different_payload(self):
+        # 14-V2-CONTRACT-SUPERSESSION §4 testele 2/6: aceeași cheie + payload
+        # diferit => conflict, zero efect nou, niciodată replay tăcut.
+        self._call("mark_managed", {"task_id": self.task.id})
+        key = "conflict-idem-1"
+        first = self._call("claim_task", {"task_id": self.task.id}, key=key)
+        self.assertEqual(first["status"], "ok", first)
+        other = self.env["project.task"].create(
+            {
+                "name": "Task API 2",
+                "project_id": self.project.id,
+                "pmorg_initiative_id": self.initiative.id,
+                "pmorg_task_type": "clarification",
+                "execution_mode": "agent",
+            }
+        )
+        resp = self._call("claim_task", {"task_id": other.id}, key=key)
+        self.assertEqual(resp["status"], "error")
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+        self.assertEqual(
+            self.env["pmorg.task.run"].search_count(
+                [("task_id", "=", other.id)]
+            ),
+            0,
+        )
+        self.assertEqual(
+            self.env["pmorg.command.inbox"].search_count(
+                [("idempotency_key", "=", key)]
+            ),
+            1,
+        )
+
+    def test_idempotency_conflict_across_commands(self):
+        # Aceeași cheie, comandă diferită: tot conflict — identitatea cererii
+        # include comanda, nu doar params.
+        key = "conflict-idem-2"
+        first = self._call("mark_managed", {"task_id": self.task.id}, key=key)
+        self.assertEqual(first["status"], "ok", first)
+        resp = self._call("claim_task", {"task_id": self.task.id}, key=key)
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+
+    def test_idempotency_legacy_row_never_replays(self):
+        # Testul de migrare (14 §4 testul 3): rând legacy fără request_hash
+        # nu e autoritativ — reutilizarea cheii lui NU rejoacă tăcut.
+        key = "legacy-idem-1"
+        self.env["pmorg.command.inbox"].create(
+            {
+                "actor_id": "runner-1",
+                "idempotency_key": key,
+                "command": "mark_managed",
+                "response": {"status": "ok", "result": {}},
+            }
+        )
+        resp = self._call("mark_managed", {"task_id": self.task.id}, key=key)
+        self.assertEqual(resp["status"], "error")
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+        self.assertEqual(self.task.orchestration_state, "not_managed")
+
+    def test_idempotency_keys_scoped_per_actor(self):
+        # 14 §4 testul 4: cheile nu se dedublează între actori.
+        key = "scoped-idem-1"
+        first = self._call(
+            "mark_managed", {"task_id": self.task.id}, actor="runner-1", key=key
+        )
+        self.assertEqual(first["status"], "ok", first)
+        resp = self._call(
+            "claim_task", {"task_id": self.task.id}, actor="runner-2", key=key
+        )
+        self.assertNotEqual(
+            resp.get("error", {}).get("code"), "E_IDEMPOTENCY_CONFLICT", resp
+        )
+        self.assertEqual(resp["status"], "ok", resp)
+
     def test_claim_version_conflict(self):
         self._call("mark_managed", {"task_id": self.task.id})
         resp = self._call(

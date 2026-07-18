@@ -85,6 +85,7 @@ Reguli:
 | `E_LEASE` | token de lease invalid sau expirat |
 | `E_NOT_DUE` | taskul nu este eligibil/scadent pentru claim |
 | `E_CRITERIA` | închidere/completare fără criteriile sau dovezile cerute |
+| `E_IDEMPOTENCY_CONFLICT` | aceeași cheie de idempotency cu o cerere diferită (comandă/params) sau cu rând legacy fără hash verificabil; zero efect, niciodată replay tăcut (adăugat 2026-07-18, aliniere [14 §4](../pmorg-v3/14-V2-CONTRACT-SUPERSESSION.md)) |
 
 ## 5. Stările de orchestrare și tranzițiile
 

@@ -1,3 +1,5 @@
+import hashlib
+import json
 import secrets
 from datetime import datetime, timedelta
 
@@ -169,6 +171,21 @@ class PmorgOrchestratorApi(models.AbstractModel):
     # -------------------------------------------------------------- dispatch
 
     @api.model
+    def _request_hash(self, command, payload):
+        """Hash canonic al cererii: comandă + params, fără anvelopă.
+
+        message_id/occurred_at variază legitim la retry; identitatea cererii
+        e conținutul ei semantic.
+        """
+        canonical = json.dumps(
+            {"command": command, "params": payload.get("params") or {}},
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    @api.model
     def _dispatch(self, command, payload):
         mutant = command not in READ_ONLY_COMMANDS
         try:
@@ -184,6 +201,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
         actor_id = payload["actor"]["id"]
         key = payload.get("idempotency_key")
+        request_hash = self._request_hash(command, payload)
         Inbox = self.env["pmorg.command.inbox"]
 
         if mutant:
@@ -191,6 +209,22 @@ class PmorgOrchestratorApi(models.AbstractModel):
                 [("actor_id", "=", actor_id), ("idempotency_key", "=", key)], limit=1
             )
             if prior:
+                # Aceeași cheie garantează replay DOAR pentru aceeași cerere.
+                # Rândurile legacy fără hash nu pot dovedi asta => neautoritative
+                # (14-V2-CONTRACT-SUPERSESSION §4, testele 2/3/6).
+                if prior.request_hash != request_hash:
+                    return {
+                        "status": "error",
+                        "error": {
+                            "code": "E_IDEMPOTENCY_CONFLICT",
+                            "message": "Cheia de idempotency e deja folosită "
+                            "pentru o cerere diferită"
+                            if prior.request_hash
+                            else "Cheia de idempotency există într-un rând "
+                            "legacy fără payload verificabil",
+                        },
+                        "message_id": payload.get("message_id"),
+                    }
                 response = dict(prior.response or {})
                 response["status"] = "replay"
                 response["message_id"] = payload.get("message_id")
@@ -220,6 +254,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
                     "actor_id": actor_id,
                     "idempotency_key": key,
                     "command": command,
+                    "request_hash": request_hash,
                     "response": response,
                 }
             )
