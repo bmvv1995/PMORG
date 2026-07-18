@@ -1,0 +1,18 @@
+profile_id: org-services
+suite_version: "0.3"
+baseline:
+  odoo_edition: community
+  odoo_revision: 1b8f6802832cfa4d146193a912af1f4445d09f0a
+  modules: [base, project, hr]
+anchor_packs: [pmorg_anchor_hr]
+worldgen_packs: [pmorg_world_services]
+policies: {}
+fixtures:
+  demo_module: pmorg_world_services
+  world: birou-servicii
+  company: Birou Servicii Test SRL
+  identities:
+    owner: pmorg_world_services.identity_elena
+    validator: pmorg_world_services.identity_dan
+    participant: pmorg_world_services.identity_ioana
+forbidden_modules: [stock, hr_holidays]

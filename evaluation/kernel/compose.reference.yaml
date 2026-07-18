@@ -1,0 +1,135 @@
+name: pmorg-v2-sb3
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/odoo_db_password
+    secrets:
+      - odoo_db_password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  odoo:
+    image: odoo:19.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD_FILE: /run/secrets/odoo_db_password
+    secrets:
+      - odoo_db_password
+    volumes:
+      - ./odoo_addons:/mnt/extra-addons
+      - ./evaluation:/mnt/evaluation:ro
+      - odoo_data:/var/lib/odoo
+    ports:
+      - "127.0.0.1:${ODOO_HTTP_PORT:-18070}:8069"
+    networks:
+      - data
+    restart: unless-stopped
+
+  memory:
+    image: odoo:19.0
+    entrypoint: ["python3", "/mnt/memory/pmorg_memory_server.py"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMORG_PROFILE_ID: org-min
+      PMORG_RUN_ID: dev-sb3-local
+      PMORG_INSTANCE_UUID: "6cc4be57-3dcf-4af7-a2e1-f058e6e2d76c"
+      PMORG_NAMESPACE: org-min-dev
+      PMORG_PG_HOST: db
+      PMORG_PG_DB: pmorg_memory
+      PMORG_PG_USER: odoo
+      PMORG_PG_PASSWORD_FILE: /run/secrets/odoo_db_password
+      PMORG_AUTHORIZED_VALIDATORS: pmorg_core.pmorg_demo_identity_paul
+      PMORG_BIND_PORT: "8091"
+    secrets:
+      - odoo_db_password
+    volumes:
+      - ./memory:/mnt/memory:ro
+    ports:
+      - "127.0.0.1:${MEM_MIN_PORT:-18091}:8091"
+    networks:
+      - data
+    restart: unless-stopped
+
+  memory_services:
+    image: odoo:19.0
+    entrypoint: ["python3", "/mnt/memory/pmorg_memory_server.py"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMORG_PROFILE_ID: org-services
+      PMORG_RUN_ID: dev-sb3-local
+      PMORG_INSTANCE_UUID: "dc042e78-5686-469f-a17f-339db12b5924"
+      PMORG_NAMESPACE: org-services-dev
+      PMORG_PG_HOST: db
+      PMORG_PG_DB: pmorg_memory_srv
+      PMORG_PG_USER: odoo
+      PMORG_PG_PASSWORD_FILE: /run/secrets/odoo_db_password
+      PMORG_AUTHORIZED_VALIDATORS: pmorg_world_services.identity_dan
+      PMORG_BIND_PORT: "8091"
+    secrets:
+      - odoo_db_password
+    volumes:
+      - ./memory:/mnt/memory:ro
+    ports:
+      - "127.0.0.1:${MEM_SRV_PORT:-18092}:8091"
+    networks:
+      - data
+    restart: unless-stopped
+
+  memory_distribution:
+    image: odoo:19.0
+    entrypoint: ["python3", "/mnt/memory/pmorg_memory_server.py"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMORG_PROFILE_ID: org-distribution
+      PMORG_RUN_ID: dev-sb3-local
+      PMORG_INSTANCE_UUID: "887e6749-453f-4302-b165-9e94191bd986"
+      PMORG_NAMESPACE: org-distribution-dev
+      PMORG_PG_HOST: db
+      PMORG_PG_DB: pmorg_memory_dst
+      PMORG_PG_USER: odoo
+      PMORG_PG_PASSWORD_FILE: /run/secrets/odoo_db_password
+      PMORG_AUTHORIZED_VALIDATORS: pmorg_world_distribution.identity_andrei
+      PMORG_BIND_PORT: "8091"
+    secrets:
+      - odoo_db_password
+    volumes:
+      - ./memory:/mnt/memory:ro
+    ports:
+      - "127.0.0.1:${MEM_DST_PORT:-18093}:8091"
+    networks:
+      - data
+    restart: unless-stopped
+
+networks:
+  data:
+    driver: bridge
+
+volumes:
+  pg_data:
+  odoo_data:
+
+secrets:
+  odoo_db_password:
+    file: ./.secrets/odoo_db_password

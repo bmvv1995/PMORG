@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | ADR-001–014 Accepted; ADR-015–018 Proposed |
+| Status | ADR-001–018 Accepted |
 | Versiune | 0.3 |
 | Data | 2026-07-17 |
 | Domeniu | Produsul PMORG v2 și MVP-ul inițial |
@@ -11,9 +11,9 @@ O decizie `Accepted` este normativă. Schimbarea ei necesită un ADR nou care o
 marchează explicit `Superseded`. `Proposed` indică o decizie formulată, dar
 neaprobată încă. Suita v0.1 a fost aprobată explicit de owner la 2026-07-16;
 ADR-001–012 își păstrează textul și statutul `Accepted`. Ownerul a acceptat
-explicit ADR-013 și ADR-014 la 2026-07-17. ADR-015–018 rămân `Proposed` până
-la aprobarea lor explicită; nicio extensie nu modifică retroactiv deciziile
-acceptate.
+explicit ADR-013 și ADR-014 la 2026-07-17, iar ADR-015–018 tot la
+2026-07-17, prin mandat delegat explicit. Nicio extensie nu modifică
+retroactiv deciziile acceptate.
 
 ## ADR-001 — PMORG este Odoo-first
 
@@ -199,7 +199,7 @@ automată a persoanelor.
 
 ## ADR-015 — Oracle-ul de evaluare este separat și invizibil SUT-ului
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-17, prin delegare explicită a ownerului)
 
 **Decizie:** Sandboxul are două frontiere: produsul evaluat și harness-ul
 privat. Oracle DB păstrează adevărul fizic, cunoașterea privată, expected
@@ -222,7 +222,7 @@ validator business în timpul rulării; scorer online în bucla operatorului.
 
 ## ADR-016 — Worldgen are nucleu generic și domain packs
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-17, prin delegare explicită a ownerului)
 
 **Decizie:** Worldgen core cunoaște numai identități, structură, calendar,
 proiecte, evenimente, timp și materializare. Procesele de industrie apar în
@@ -241,7 +241,7 @@ generatorului de fixture cu ontologia/anchor pack-ul produsului.
 
 ## ADR-017 — Evaluarea este un run bundle imuabil și temporal explicit
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-17, prin delegare explicită a ownerului)
 
 **Decizie:** Fiecare rulare fixează prin manifest versionat buildurile,
 contractele, profilul, scenariul, seed-ul, politicile, ceasul, fault planul și,
@@ -265,7 +265,7 @@ runs; alegerea manuală a celei mai bune rulări LLM.
 
 ## ADR-018 — Corpusul separă train, calibration și hidden-test prin lineage
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-17, prin delegare explicită a ownerului)
 
 **Decizie:** Corpusul canonic separă `case_version`, `benchmark_run`,
 `corpus_example` și `corpus_release`. Splitul este atribuit înaintea
@@ -290,9 +290,9 @@ provider drept sursă canonică.
 2. Mașina de stare agentică și relația cu stage-urile Odoo.
 3. Semnăturile, payload-urile și codurile de eroare exacte pentru API-ul de
    orchestrare deja delimitat.
-4. Forma exactă și statutul normativ al handshake-ului de capability registry
-   propus în arhitectură, apoi payload-urile, codurile de eroare, controlul de
-   acces MCP și comportamentul la indisponibilitatea memoriei.
+4. ~~Handshake-ul de capability registry, payload-urile, codurile de eroare,
+   controlul de acces MCP și indisponibilitatea memoriei~~ — închisă prin
+   Anexa A din `07-CONTRACTS.md` (2026-07-18, S3).
 5. Extinderea ulterioară a pack-urilor HR și Inventory dincolo de subsetul
    minim fixat pentru MVP, fără mutarea dependențelor în nucleu.
 6. Matricea inițială de autonomie și aprobări.

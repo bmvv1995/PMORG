@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="anchor_type_company" model="pmorg.anchor.type">
+            <field name="code">COMPANY</field><field name="model_name">res.company</field><field name="pack">pmorg_core</field>
+        </record>
+        <record id="anchor_type_project" model="pmorg.anchor.type">
+            <field name="code">PROJECT</field><field name="model_name">project.project</field><field name="pack">pmorg_core</field>
+        </record>
+        <record id="anchor_type_task" model="pmorg.anchor.type">
+            <field name="code">TASK</field><field name="model_name">project.task</field><field name="pack">pmorg_core</field>
+        </record>
+        <record id="anchor_type_initiative" model="pmorg.anchor.type">
+            <field name="code">INITIATIVE</field><field name="model_name">pmorg.initiative</field><field name="pack">pmorg_core</field>
+        </record>
+        <record id="anchor_type_identity" model="pmorg.anchor.type">
+            <field name="code">IDENTITY</field><field name="model_name">pmorg.identity</field><field name="pack">pmorg_core</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,31 @@
+FROM odoo@sha256:f54272f31d5f77e4146b887efb3761c98480317daf687e4b4b5e76ed8bcc08c5
+
+ARG ODOO_COMMIT=1b8f6802832cfa4d146193a912af1f4445d09f0a
+ARG ODOO_SOURCE_SHA256=49e525a1a20ff4d05991bb53413fa2c34614cfbb3644290b4438f76e7be29928
+
+USER root
+
+RUN set -Eeux; \
+    curl --fail --location --silent --show-error \
+        --output /tmp/odoo-source.tar.gz \
+        "https://github.com/odoo/odoo/archive/${ODOO_COMMIT}.tar.gz"; \
+    echo "${ODOO_SOURCE_SHA256}  /tmp/odoo-source.tar.gz" | sha256sum --check --strict; \
+    mkdir -p /opt/odoo-src; \
+    tar --extract --gzip --file /tmp/odoo-source.tar.gz \
+        --strip-components=1 --directory /opt/odoo-src; \
+    rm /tmp/odoo-source.tar.gz; \
+    rm -rf /usr/lib/python3/dist-packages/odoo \
+        /usr/lib/python3/dist-packages/odoo-* \
+        /usr/lib/python3/dist-packages/addons; \
+    ln -s /opt/odoo-src/odoo-bin /usr/local/bin/odoo; \
+    chown -R odoo:odoo /opt/odoo-src
+
+COPY --chown=odoo:odoo odoo_addons/ /opt/pmorg-addons/
+COPY --chown=root:root --chmod=0755 docker/odoo-entrypoint.sh /usr/local/bin/pmorg-odoo-entrypoint
+
+USER odoo
+
+LABEL org.opencontainers.image.revision="${ODOO_COMMIT}"
+
+ENTRYPOINT ["/usr/local/bin/pmorg-odoo-entrypoint"]
+CMD ["odoo"]

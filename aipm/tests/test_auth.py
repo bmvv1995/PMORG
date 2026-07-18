@@ -37,6 +37,7 @@ def test_bearer_token_accepted(client):
     assert types == {
         "COMPANY", "PROJECT", "TASK", "PARTNER", "EMPLOYEE",
         "PURCHASE_ORDER", "SALE_ORDER", "LEAD", "PRODUCT",
+        "INITIATIVE", "IDENTITY",  # migrația 0008 (convergența v2, S3)
     }
 
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="world_company" model="res.company"><field name="name">Delta Distribution Test SRL</field></record>
+    <record id="partner_mara" model="res.partner"><field name="name">Mara Ionescu</field><field name="company_id" ref="world_company"/><field name="email">mara.ionescu@delta-test.example</field></record>
+    <record id="partner_andrei" model="res.partner"><field name="name">Andrei Pop</field><field name="company_id" ref="world_company"/><field name="email">andrei.pop@delta-test.example</field></record>
+    <record id="partner_mihai" model="res.partner"><field name="name">Mihai Stan</field><field name="company_id" ref="world_company"/><field name="email">mihai.stan@delta-test.example</field></record>
+    <record id="user_mara" model="res.users">
+        <field name="login">mara.ionescu@delta-test.example</field>
+        <field name="partner_id" ref="partner_mara"/>
+        <field name="company_id" ref="world_company"/>
+        <field name="company_ids" eval="[(4, ref('world_company'))]"/>
+    </record>
+    <record id="identity_mara" model="pmorg.identity"><field name="company_id" ref="world_company"/><field name="partner_id" ref="partner_mara"/><field name="user_id" ref="user_mara"/></record>
+    <record id="identity_andrei" model="pmorg.identity"><field name="company_id" ref="world_company"/><field name="partner_id" ref="partner_andrei"/></record>
+    <record id="identity_mihai" model="pmorg.identity"><field name="company_id" ref="world_company"/><field name="partner_id" ref="partner_mihai"/></record>
+    <record id="employee_mara" model="hr.employee"><field name="name">Mara Ionescu</field><field name="company_id" ref="world_company"/><field name="job_title">Owner</field><field name="work_contact_id" ref="partner_mara"/></record>
+    <record id="employee_andrei" model="hr.employee"><field name="name">Andrei Pop</field><field name="company_id" ref="world_company"/><field name="job_title">Manager operațional</field><field name="work_contact_id" ref="partner_andrei"/><field name="parent_id" ref="employee_mara"/></record>
+    <record id="employee_mihai" model="hr.employee"><field name="name">Mihai Stan</field><field name="company_id" ref="world_company"/><field name="job_title">Gestionar</field><field name="work_contact_id" ref="partner_mihai"/><field name="parent_id" ref="employee_andrei"/></record>
+    <record id="world_project" model="project.project"><field name="name">Clarificări operaționale — TEST</field><field name="company_id" ref="world_company"/></record>
+    <record id="product_cutii" model="product.template"><field name="name">Cutii ambalaj — TEST</field><field name="is_storable">True</field></record>
+</odoo>

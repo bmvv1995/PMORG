@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="anchor_type_employee" model="pmorg.anchor.type">
+            <field name="code">EMPLOYEE</field><field name="model_name">hr.employee</field><field name="pack">pmorg_anchor_hr</field>
+        </record>
+        <record id="anchor_type_department" model="pmorg.anchor.type">
+            <field name="code">DEPARTMENT</field><field name="model_name">hr.department</field><field name="pack">pmorg_anchor_hr</field>
+        </record>
+    </data>
+</odoo>

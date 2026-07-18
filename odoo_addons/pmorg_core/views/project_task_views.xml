@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pmorg_project_task_view_form" model="ir.ui.view">
+        <field name="name">pmorg.project.task.form</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="orchestration_state" widget="statusbar" statusbar_visible="ready,claimed,running,waiting_response,completed"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="PMORG" name="pmorg">
+                    <group>
+                        <group string="Clasificare">
+                            <field name="pmorg_initiative_id"/>
+                            <field name="pmorg_task_type"/>
+                            <field name="execution_mode"/>
+                        </group>
+                        <group string="Orchestrare">
+                            <field name="orchestration_state"/>
+                            <field name="active_run_id"/>
+                            <field name="state_version"/>
+                            <field name="next_check_at"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Rezultat">
+                            <field name="expected_outcome"/>
+                            <field name="completion_criteria"/>
+                            <field name="verification_status"/>
+                        </group>
+                        <group string="Urmărire">
+                            <field name="awaiting_response_from"/>
+                            <field name="awaiting_since"/>
+                            <field name="last_progress_at"/>
+                            <field name="last_intervention_at"/>
+                            <field name="followup_count"/>
+                            <field name="escalation_level"/>
+                        </group>
+                    </group>
+                    <group string="Participanți">
+                        <field name="participant_ids" widget="many2many_tags"/>
+                    </group>
+                    <group string="Ancore">
+                        <field name="anchor_ids" nolabel="1" colspan="2">
+                            <list editable="bottom">
+                                <field name="model_name"/>
+                                <field name="res_id"/>
+                                <field name="role"/>
+                                <field name="note"/>
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="pmorg_project_task_view_tree" model="ir.ui.view">
+        <field name="name">pmorg.project.task.tree</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_tree2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='stage_id']" position="before">
+                <field name="pmorg_task_type"/>
+                <field name="execution_mode"/>
+                <field name="pmorg_initiative_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
