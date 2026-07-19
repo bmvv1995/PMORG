@@ -117,7 +117,7 @@ O schimbare de fond după `RB-1/C2` cere ADR nou, impact asupra cerințelor/test
 | `PLT-002` | Semantic Core SHALL fi bounded context first-class, cu ownership și migrații proprii. |
 | `PLT-003` | Odoo DB, Onyx DB și Semantic Ledger SHALL folosi baze și roluri distincte; Odoo SHALL NOT scana DB-urile PMORG. |
 | `PLT-004` | Codul PMORG de domeniu SHALL fi separat de codul upstream, iar patchurile upstream SHALL fi inventariate. |
-| `PLT-005` | Fiecare build SHALL declara `onyx_surface: ce|ee` și `usage_mode: development_test|production`; `ce` SHALL exclude EE; `ee + development_test` SHALL avea inventar complet și production/distribution guard; `ee + production` SHALL refuza fail-closed fără dovadă validă pentru entitate, seats/scope și acord. |
+| `PLT-005` | Fiecare build SHALL declara `onyx_surface: ce|ee` și `usage_mode: development_test|production`; `ce` SHALL exclude EE; orice suprafață `ee` SHALL avea inventar complet; `ee + development_test` SHALL adăuga production/distribution guard; `ee + production` SHALL adăuga autorizare validă pentru entitate, seats/scope și acord și SHALL refuza fail-closed fără ea. |
 | `PLT-006` | O capabilitate Onyx existentă SHALL fi reutilizată implicit dacă trece contractele PMORG, izolarea, securitatea și constrângerile comerciale; abaterea SHALL cere ADR/waiver versionat. Codul EE SHALL NOT fi copiat în module PMORG, iar fiecare patch direct EE SHALL declara `license_class=onyx-enterprise` fără revendicare de ownership PMORG. |
 | `SEC-001` | Fiecare operație SHALL avea `organization_id`, instanță Odoo, companie, identitate și registry fingerprint. |
 | `SEC-002` | Accesul cross-organization și cross-company SHALL fi refuzat înainte de retrieval sau action. |
@@ -171,7 +171,7 @@ ADR-309–316 sunt acceptate cu următoarea interpretare:
 - `PMORG` și `PMORG-Platform` sunt repository-uri distincte;
 - Onyx-PMORG este workspace-ul principal, Odoo rămâne formal/fallback;
 - suprafața Onyx și modul de utilizare sunt declarate independent; `ce` nu
-  este critical path pentru Semantic Core ori contracte, `ee + development_test`
+  este critical path pentru Semantic Core ori contracte, `ee` cere inventar complet în ambele moduri, `ee + development_test`
   este permis numai cu guard de non-producție, iar `ee + production` cere
   autorizare validă fail-closed;
 - longitudinalitatea deterministă este parte din MVP, nu etapă opțională.
