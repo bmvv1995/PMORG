@@ -3,9 +3,9 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted, cu corrigendum implementabil |
-| Baseline | `RB-1/C1` |
-| Versiune produs | `3.0-baseline.2` |
-| Data acceptării | 2026-07-18 |
+| Baseline | `RB-1/C2` |
+| Versiune produs | `3.0-baseline.3` |
+| Data acceptării | 2026-07-19 |
 | Scope | MVP structural și longitudinal, G3-A–G3-F |
 
 ## 1. Scopul baseline-ului
@@ -14,7 +14,7 @@ Acest document îngheață cerința PMORG v3 suficient pentru proiectare tehnic�
 estimare și implementare fără reinterpretarea intenției produsului.
 
 Baseline-ul nu fixează încă tagul Onyx, revizia Odoo, providerul LLM sau
-configurația Hermes. Acestea sunt selecții de implementare/calificare care se
+implementarea orchestratorului persistent. Acestea sunt selecții de implementare/calificare care se
 înregistrează ulterior în manifest, fără să schimbe cerința.
 
 ## 2. Ierarhia normativă
@@ -30,7 +30,7 @@ configurația Hermes. Acestea sunt selecții de implementare/calificare care se
 5. definiția produsului, arhitectura și modelul de domeniu v3;
 6. documentele v2 și implementările v1/SB2/SB3, exclusiv ca referință.
 
-O schimbare de fond după `RB-1/C1` cere ADR nou, impact asupra cerințelor/testelor
+O schimbare de fond după `RB-1/C2` cere ADR nou, impact asupra cerințelor/testelor
 și versiune nouă a baseline-ului.
 
 ## 3. Cerința principală
@@ -72,7 +72,7 @@ O schimbare de fond după `RB-1/C1` cere ADR nou, impact asupra cerințelor/test
 | `ODO-005` | Un modul sau tip absent din registry SHALL fi absent din ancore, actions și formalizări. |
 | `ODO-006` | O ancoră SHALL include instanță, companie, tip, model, record, registry/fingerprint și versiunea observată. |
 | `ODO-007` | Orice efect SHALL folosi o comandă business îngustă, autorizată, idempotentă și auditată. |
-| `ODO-008` | Onyx, Hermes și modelele SHALL NOT primi acces ORM, SQL sau credential de DB Odoo generic. |
+| `ODO-008` | Onyx, orchestratorul și modelele SHALL NOT primi acces ORM, SQL sau credential de DB Odoo generic. |
 | `ODO-009` | Odoo SHALL rămâne operabil manual când runtime-ul cognitiv sau orchestratorul este indisponibil. |
 
 ## 6. Cerințe de memorie
@@ -97,15 +97,15 @@ O schimbare de fond după `RB-1/C1` cere ADR nou, impact asupra cerințelor/test
 | ID | Cerință obligatorie |
 |---|---|
 | `INT-001` | Fiecare turn oficial SHALL trece prin Turn Coordinator. |
-| `INT-002` | UI-ul PMORG și Gateway SHALL intra mai întâi în Turn Admission; Hermes/runnerul SHALL primi numai `AdmittedMessage`, apoi SHALL continua în același Turn API și aceeași politică. |
+| `INT-002` | UI-ul PMORG și Gateway SHALL intra mai întâi în Turn Admission; orchestratorul/runnerul SHALL primi numai `AdmittedMessage`, apoi SHALL continua în același Turn API și aceeași politică. |
 | `INT-003` | Identitatea expeditorului SHALL proveni structural din binding; SHALL NOT fi ghicită din text. |
 | `INT-004` | Orice mesaj admis de `INT-006` SHALL fi capturat durabil ca evidence înainte de execuția cognitivă care îl interpretează. |
 | `INT-005` | Fiecare action SHALL avea preflight determinist și receipt. |
-| `INT-006` | Fiecare mesaj SHALL trece prin privacy/secrets gate după identity binding și înainte de orice transcript, evidence, index, prompt sau checkpoint/log Hermes; refuzul SHALL persista numai metadata minimă fără conținut, referință ori hash și SHALL NOT ajunge la Hermes/runner/runtime. |
-| `ORC-001` | Hermes SHALL fi orchestratorul țintă; runnerul determinist SHALL demonstra același contract în MVP. |
-| `ORC-002` | Hermes SHALL apela `execute_cognitive_step`; SHALL NOT folosi chat generic drept contract longitudinal. |
+| `INT-006` | Fiecare mesaj SHALL trece prin privacy/secrets gate după identity binding și înainte de orice transcript, evidence, index, prompt sau checkpoint/log orchestrator; refuzul SHALL persista numai metadata minimă fără conținut, referință ori hash și SHALL NOT ajunge la orchestrator/runner/runtime. |
+| `ORC-001` | Un orchestrator persistent implementation-agnostic SHALL conduce procesele longitudinale; runnerul determinist SHALL demonstra același contract în MVP, iar Hermes MAY fi un adaptor calificat. |
+| `ORC-002` | Orchestratorul SHALL apela `execute_cognitive_step`; SHALL NOT folosi chat generic drept contract longitudinal. |
 | `ORC-003` | O execuție cognitivă SHALL fi bounded, versionată și idempotentă. |
-| `ORC-004` | Scheduling, retry și checkpoint Hermes SHALL NOT deveni starea business canonică. |
+| `ORC-004` | Scheduling, retry și checkpoint ale orchestratorului SHALL NOT deveni starea business canonică. |
 | `ORC-005` | Controller-ele SHALL executa cel mult un pas idempotent și SHALL persista următoarea verificare. |
 | `ORC-006` | Un controller system-only SHALL reactiva idempotent munca `waiting_response`, `waiting_approval` sau `scheduled` pe eveniment corelat ori timp trusted scadent înainte de un claim nou. |
 
@@ -113,11 +113,12 @@ O schimbare de fond după `RB-1/C1` cere ADR nou, impact asupra cerințelor/test
 
 | ID | Cerință obligatorie |
 |---|---|
-| `PLT-001` | PMORG v3 SHALL fi construit ca fork guvernat al Onyx CE, cu baseline tag + SHA exact. |
+| `PLT-001` | PMORG v3 SHALL fi construit ca fork guvernat al Onyx, cu baseline tag + SHA exact și profil de livrare declarat. |
 | `PLT-002` | Semantic Core SHALL fi bounded context first-class, cu ownership și migrații proprii. |
 | `PLT-003` | Odoo DB, Onyx DB și Semantic Ledger SHALL folosi baze și roluri distincte; Odoo SHALL NOT scana DB-urile PMORG. |
 | `PLT-004` | Codul PMORG de domeniu SHALL fi separat de codul upstream, iar patchurile upstream SHALL fi inventariate. |
-| `PLT-005` | Buildul CE al MVP-ului SHALL exclude codul din directoarele Onyx `ee`. |
+| `PLT-005` | Fiecare build SHALL declara profilul `ce` sau `licensed-ee`; `ce` SHALL exclude codul Onyx `ee`, iar `licensed-ee` SHALL inventaria dependențele EE și SHALL cere autorizare comercială înainte de deployment client. |
+| `PLT-006` | PMORG SHALL reutiliza o capabilitate Onyx adecvată în loc să o reimplementeze numai pentru a evita EE; codul EE SHALL NOT fi copiat în module PMORG. |
 | `SEC-001` | Fiecare operație SHALL avea `organization_id`, instanță Odoo, companie, identitate și registry fingerprint. |
 | `SEC-002` | Accesul cross-organization și cross-company SHALL fi refuzat înainte de retrieval sau action. |
 | `SEC-003` | Secretele SHALL NOT apărea în evidence, prompturi, logs ori receipts. |
@@ -151,7 +152,7 @@ MVP-ul include:
 
 MVP-ul exclude:
 
-- Hermes real;
+- un orchestrator persistent real (Hermes rămâne opțiune);
 - model stochastic drept condiție de PASS;
 - canal real;
 - date reale;
@@ -161,7 +162,7 @@ MVP-ul exclude:
 Aceste excluderi nu elimină responsabilitățile produsului. Ele amână numai
 implementarea concretă la G3-G, G3-H sau G3-I.
 
-## 11. Deciziile înghețate în `RB-1/C1`
+## 11. Deciziile înghețate în `RB-1/C2`
 
 ADR-309–316 sunt acceptate cu următoarea interpretare:
 
@@ -169,8 +170,9 @@ ADR-309–316 sunt acceptate cu următoarea interpretare:
 - bazele și rolurile autoritare sunt separate;
 - `PMORG` și `PMORG-Platform` sunt repository-uri distincte;
 - Onyx-PMORG este workspace-ul principal, Odoo rămâne formal/fallback;
-- CE-only se aplică MVP-ului și datelor sintetice; strategia pentru date reale
-  necesită decizie separată de permission-aware retrieval/licențiere;
+- CE și licensed-EE sunt profiluri de livrare ale aceluiași produs; CE nu este
+  critical path pentru Semantic Core ori contracte, iar deploymentul EE cere
+  autorizare comercială înainte de livrare;
 - longitudinalitatea deterministă este parte din MVP, nu etapă opțională.
 - HIL asupra semanticii este exclusiv vocabular/ancoră; claim-urile nu au
   coadă umană de interpretare, iar approvals/outcomes business rămân fluxuri
@@ -188,7 +190,7 @@ Următoarele se decid în bootstrap și se fixează în manifest:
 - versiunea PostgreSQL/search/object store;
 - numele finale ale pachetelor și tabelelor;
 - modelul/providerul pentru G3-G;
-- forma exactă a adaptorului Hermes pentru G3-H;
+- implementarea exactă a adaptorului de orchestrator pentru G3-H (Hermes opțional);
 - primul canal real pentru G3-I.
 
 Niciuna nu poate modifica ownership-ul, closed world-ul, contractele de
