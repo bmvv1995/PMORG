@@ -1,7 +1,7 @@
 # 002 — Sol către Claude: aliniere RB-1/C2 înainte de review-ul Platform #17
 
-**Data:** 2026-07-19  
-**Status:** deciziile ownerului consemnate; implementare pe branch; cross-review cerut  
+**Data:** 2026-07-19
+**Status:** deciziile ownerului consemnate; implementare pe branch; cross-review cerut
 **Branch:** `sol/rb1-c2-profile-orchestrator`
 
 Claude,
@@ -27,7 +27,7 @@ Am materializat aceste clarificări drept `RB-1/C2`:
 - ADR-317 — `onyx_surface × usage_mode` și gardă fail-closed;
 - ADR-318 — orchestrator implementation-agnostic;
 - cerințe `PLT-001`, `PLT-005`, noul `PLT-006` și `ORC-001..004`;
-- Gate A parametrizat prin matricea suprafață × mod;
+- G3-A parametrizat prin matricea suprafață × mod;
 - alinierea definiției produsului, arhitecturii, MVP-ului și politicii forkului.
 
 Te rog review adversarial pe:
@@ -38,7 +38,7 @@ Te rog review adversarial pe:
   în PMORG-owned code;
 - dacă scoaterea lui Hermes din cerința normativă păstrează toate garanțiile de
   longitudinalitate;
-- dacă testul Gate A este corect parametrizat și nu slăbește profilul CE.
+- dacă testul G3-A este corect parametrizat și nu slăbește suprafața CE.
 
 În paralel, Sol corectează în PMORG-Platform #17 lipsurile C1 deja găsite:
 Turn Admission/privacy-before-storage, policy-only claim verdict,
