@@ -39,9 +39,10 @@ G3-A–G3-F sunt conjunctive. MVP-ul este `PASS` numai dacă toate sunt
 |---|---|---|
 | `A-FORK-001` | tagul și SHA-ul Onyx și commitul PMORG sunt fixate | 100% prezente în manifest și UI/version endpoint |
 | `A-UPSTREAM-001` | suita upstream selectată trece pe baseline curat și fork | 100% teste obligatorii; excluderile au waiver versionat |
-| `A-LIC-001` | artefactul respectă `onyx_surface × usage_mode` | `ce`: 0 fișiere/imports/layers EE; orice `ee`: inventar complet; `ee + development_test`: 100% încercări de production/distribution refuzate; `ee + production`: dovadă validă pentru entitate, seats/scope și acord, iar missing/expired/mismatch este refuzat |
+| `A-LIC-001` | buildul respectă `onyx_surface × usage_mode` | manifest semnat și legat de artifact digest; `ce`: 0 fișiere/imports/layers EE; orice `ee`: inventar complet; missing/mismatch/untrusted manifest este refuzat |
+| `A-LIC-002` | deployment admission este fail-closed | 100% `ee + development_test` refuzat pe target client; 100% `ee + production` refuzat pentru missing/expired/build-target mismatch/untrusted authorization; cazul pozitiv cere receipt semnat, verifier acceptat, entitate, seats/scope, acord și valabilitate |
 | `A-PATCH-001` | modificările upstream sunt inventariate | 100% fișiere modificate apar în patch ledger |
-| `A-PATCH-002` | patchurile directe EE nu sunt revendicate drept PMORG-owned | 100% declară `license_class=onyx-enterprise`; 0 cod EE copiat în module PMORG; orice abatere de la reuse-default are ADR/waiver versionat |
+| `A-PATCH-002` | reuse-default și ownership-ul EE sunt demonstrabile | 100% catalog capability acoperit de disposition report; 0 abatere de la reuse fără ADR/waiver; 100% patchuri directe EE declară `license_class=onyx-enterprise`; 0 copii/hash matches EE nerezolvate sub căi PMORG-owned |
 | `A-MIG-001` | instalarea/migrarea din baze curate este repetabilă | 3/3 porniri curate PASS |
 | `A-RESTORE-001` | Odoo, Onyx și Semantic Ledger pot fi restaurate independent | 1 restore complet PASS pentru fiecare store per RC |
 | `A-SUPPLY-001` | imagini, dependențe și SBOM sunt fixate | 100% imagini prin digest; 0 vulnerabilități Critical/High netriate |
@@ -164,7 +165,7 @@ SUT rămâne simultan defect de produs și nu este ștearsă de verdictul INVALI
 
 ## 10. Performanță și cost
 
-`RB-1/C1` cere măsurarea, nu inventează un SLO independent de hardware:
+`RB-1/C2` cere măsurarea, nu inventează un SLO independent de hardware:
 
 - latență P50/P95/P99 pe Turn API, Odoo command și Semantic recall;
 - throughput, backlog, outbox lag și index lag;
@@ -185,7 +186,7 @@ o valoare nu este declarată arbitrar defect funcțional în MVP.
 | `MEM-001..012` | `C-*`, `F-MEM-*`, `F-GAP-*` | semantic projection, validation/timeline și coverage report |
 | `INT-001..006` | `C-PRIVACY-*`, `D-TRACE-*`, channel contract tests | privacy receipt și message/evidence/receipt chain |
 | `ORC-001..006` | runner contracts, `F-*` | run/task event trace |
-| `PLT-001..006` | `A-*` | baseline manifest, SBOM, patch/license reports |
+| `PLT-001..007` | `A-*` | build/admission manifests, SBOM, capability, patch și license reports |
 | `SEC-001..006` | `B-ACL-*`, `C-TENANT-*`, `X-*` | security scorecard și negative traces |
 | `EVAL-001..007` | G3-A–G3-F | signed run bundle și verdict |
 
@@ -194,6 +195,12 @@ o valoare nu este declarată arbitrar defect funcțional în MVP.
 ```text
 baseline-manifest.json
 image-lock.json
+build-qualification-manifest.json
+deployment-admission-record.json
+surface-mode-report.json
+capability-catalog.json
+capability-disposition-report.json
+ee-inventory-report.json | ce-boundary-report.json
 sbom/
 license-report.json
 patch-ledger-report.json
