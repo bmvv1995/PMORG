@@ -226,33 +226,39 @@ devin stare autoritativă v3.
 
 **Decizie:** fiecare build fixează `onyx_surface: ce|ee` și
 `usage_mode: development_test|production` într-un
-`BuildQualificationManifest` content-addressed și semnat. Axele nu sunt
-flaguri runtime libere. O capabilitate Onyx existentă se reutilizează implicit
-dacă trece contractele PMORG, izolarea, securitatea și constrângerile
-comerciale; abaterea cere ADR sau waiver versionat. Un catalog versionat al
-capabilităților necesare și un capability-disposition report complet fac
-decizia `reuse|patch|pmorg_independent` verificabilă. Codul EE nu se copiază
-în module PMORG.
+`BuildQualificationManifest` canonic. Manifestul este o atestare detașată
+peste setul exact de artefacte deployabile; nu este inclus în imaginile ale
+căror digesturi le semnează. Două builduri curate independente trebuie să
+producă același artifact-set hash și același payload de calificare, ignorând
+numai envelope-ul de semnătură și timpul emiterii.
 
-Suprafața `ee` poate fi copiată și modificată pentru dezvoltare și testare în
-limitele licenței Onyx Enterprise, fără a declara fals o licență de producție.
-Orice suprafață `ee` are inventar complet. Niciun artefact `ee` nu poate fi
-distribuit ori pornit numai prin declararea unui mod: calea de deploy și
-startup-ul cer un `DeploymentAdmissionRecord` semnat, legat de digestul
-artefactului și ținta concretă. `ee + development_test` admite exclusiv o
-țintă sintetică atestată și refuză producția/distribuirea; `ee + production`
-cere autorizare verificată pentru entitate, seats/scope, acord și interval de
-valabilitate. Missing, expired, target/build mismatch ori un record emis de un
-verifier neacceptat refuză fail-closed. Patchurile directe asupra Software-ului
-EE și drepturile aferente rămân sub termenii Onyx Enterprise; numai modulele
-PMORG create independent au ownership PMORG separat.
+O capabilitate Onyx existentă se reutilizează implicit dacă trece contractele
+PMORG, izolarea, securitatea și constrângerile comerciale. Un catalog versionat,
+recorduri condițional valide și un report exact-once fac decizia
+`reuse|patch|pmorg_independent` verificabilă. Abaterea de la un candidat
+calificat cere ADR/waiver. Codul EE nu se copiază în module PMORG.
 
-**Consecințe:** calificarea `ce` rămâne o variantă selectabilă și verifică
-absența codului EE, dar nu este critical path pentru Semantic Core, contracte
-sau integrarea PMORG în Onyx. `G3-A` testează manifestul, inventarul,
-disposition report-ul și admission-ul pentru fiecare celulă declarată. O
-promisiune viitoare de licențiere, un environment variable ori schimbarea
-manuală a modului nu pot autoriza producția.
+Orice `development_test`, indiferent de suprafață, admite numai o țintă și o
+destinație de distribuție sintetice, măsurate și semnate.
+`ce + production` cere admission de release legat de artefact și ținta client.
+`ee + production` cere suplimentar autorizare Onyx Enterprise verificată.
+Target fingerprint-ul este derivat din descriptorul canonic al bindingurilor de
+date, identități, canale, secrets, workload și network policy, apoi recomputat
+la deploy și startup. Necunoscut, imposibil de măsurat, expirat, revocat,
+build/target mismatch ori verifier neacceptat refuză fail-closed.
+Publicarea/exportul trece printr-un distribution admission separat.
+
+Patchurile directe asupra Software-ului EE și drepturile aferente rămân sub
+termenii Onyx Enterprise; numai modulele PMORG create independent au ownership
+PMORG separat. Identificatorii comerciali sunt opaci/HMAC, recordurile complete
+sunt sealed, iar bundle-ul public conține numai hash și verdict.
+
+**Consecințe:** calificarea `ce` rămâne selectabilă și verifică absența codului
+EE, dar nu este critical path pentru Semantic Core, contracte sau integrarea
+PMORG în Onyx. `G3-A` testează toate cele patru celule, reproducibilitatea,
+admission-ul de deploy/startup/distribution, capability disposition și
+proveniența. Un flag, o etichetă, un URI mutabil ori o promisiune viitoare de
+licențiere nu pot autoriza producția.
 
 ## ADR-318 — Contractul orchestratorului este implementation-agnostic
 
@@ -274,7 +280,7 @@ ownership-ul, contractele sau starea business canonică.
 | 001 — PMORG este aplicație Odoo | Superseded de 302–303; Odoo-first rămâne |
 | 002 — anchor packs | Reaffirmed de 304 |
 | 003 — `project.task` canonic | Reaffirmed de 307 |
-| 004 — runtime și memoria externe | Superseded de 305–306; ownership-ul rămâne separat |
+| 004 — runtime și memoria externe | Superseded de 305 și 318; ownership-ul rămâne separat |
 | 005 — admitere validată în memorie | Reaffirmed |
 | 006 — comenzi agentice controlate | Reaffirmed |
 | 007 — longitudinalitate prin stare persistentă | Reaffirmed |
