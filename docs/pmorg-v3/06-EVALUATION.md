@@ -120,10 +120,12 @@ pmorg_spec_commit
 pmorg_platform_commit
 onyx_upstream_tag_and_sha
 onyx_surface + usage_mode
-build_qualification_manifest_hash + verifier_receipt_hash
+artifact_set_hash + image_lock_hash
+build_qualification_manifest_hash + attestation_hash + qualification_bundle_hash
 ee_inventory_report_hash | ce_boundary_report_hash, după suprafață
-deployment_admission_record_hash + target_class
-capability_catalog_hash + capability_disposition_report_hash
+target_descriptor_hash + target_fingerprint + measurement_attestation_hash
+deployment_admission_record_hash + distribution_admission_record_hashes
+capability_catalog/disposition hashes + provenance_scan_report_hash
 odoo_revision_and_image_digest
 semantic_schema_version
 contract_versions
