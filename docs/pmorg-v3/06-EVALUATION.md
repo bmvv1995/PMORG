@@ -119,10 +119,15 @@ pmorg_product_version
 pmorg_spec_commit
 pmorg_platform_commit
 onyx_upstream_tag_and_sha
+onyx_surface + usage_mode
+build_qualification_manifest_hash + verifier_receipt_hash
+ee_inventory_report_hash | ce_boundary_report_hash, după suprafață
+deployment_admission_record_hash + target_class
+capability_catalog_hash + capability_disposition_report_hash
 odoo_revision_and_image_digest
 semantic_schema_version
 contract_versions
-profile + module/pack fingerprints
+organization_profile + module/pack fingerprints
 world seed + world.lock
 scenario + policy versions
 clock/fault plan
