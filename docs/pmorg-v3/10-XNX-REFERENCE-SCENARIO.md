@@ -4,7 +4,7 @@
 |---|---|
 | Status | Accepted |
 | Scenario version | `ORG-DIST-XNX-v1` |
-| Baseline | `RB-1/C1` |
+| Baseline | `RB-1/C2` |
 | Timp | calendar virtual Europe/Bucharest |
 | Date | exclusiv sintetice |
 

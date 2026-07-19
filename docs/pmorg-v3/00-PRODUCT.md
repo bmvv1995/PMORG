@@ -2,10 +2,10 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
-| Bază de implementare | fork guvernat al Onyx Community Edition; commitul exact se fixează la bootstrap |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
+| Bază de implementare | fork guvernat al Onyx; fiecare build declară `onyx_surface: ce|ee` și `usage_mode: development_test|production`; tagul și SHA-ul se fixează la bootstrap |
 | Ancoră de domeniu | Odoo 19 Community, cu revizia exactă fixată în manifestul fiecărui build |
 
 ## 1. Definiție
@@ -39,20 +39,23 @@ execuțiile sunt mijloacele prin care inițiativa ajunge la un rezultat.
 V3 este o nouă generație de implementare a aceluiași produs, nu un produs cu
 altă intenție.
 
-- Onyx Community Edition devine codebase-ul, workspace-ul cognitiv și baza de
-  UI, chat, knowledge, RAG, agenți și actions.
+- Onyx devine codebase-ul, workspace-ul cognitiv și baza de UI, chat,
+  knowledge, RAG, agenți și actions. O capabilitate Onyx existentă se
+  reutilizează implicit dacă trece contractele PMORG, izolarea, securitatea și
+  constrângerile comerciale; abaterea cere ADR sau waiver versionat.
 - PMORG Semantic Core devine un bounded context obligatoriu în produs, nu un
   add-on opțional și nici un simplu index Onyx.
 - Odoo rămâne ontologia executabilă, registrul muncii formale și sursa
   adevărului operațional curent.
-- Hermes rămâne orchestratorul persistent vizat. El coordonează procesele în
-  timp; Onyx-PMORG execută pași cognitivi limitați și explicabili.
+- Un orchestrator persistent coordonează procesele în timp; Onyx-PMORG execută
+  pași cognitivi limitați și explicabili. Hermes este o implementare candidată,
+  nu o cerință a produsului.
 - Communication Gateway normalizează identitatea, conversațiile și
   livrarea pentru canalele externe.
 
 Prin urmare, produsul nu este „Onyx + un plugin PMORG” și nici patru produse
 lipite. Este **PMORG Platform**, construită dintr-un fork guvernat Onyx, cu
-Odoo și Hermes ca sisteme contractuale distincte.
+Odoo și orchestratorul persistent ca sisteme contractuale distincte.
 
 ## 3. Promisiunea de business
 
@@ -76,7 +79,7 @@ Odoo și Hermes ca sisteme contractuale distincte.
 PMORG Platform (fork Onyx)
 + Semantic Core și memoria organizațională
 + Odoo și modulele/anchor packs active
-+ Hermes sau runnerul contractual
++ orchestratorul persistent sau runnerul contractual
 + Communication Gateway și canalele autorizate
 + politici, identități și date
 = operatorul unei organizații concrete
@@ -151,7 +154,7 @@ context. Ele nu transformă singure un text în adevăr organizațional.
 - Semantic Core, ledgerul semantic și proiecțiile sale de căutare;
 - integrarea Odoo, aplicația/addon-urile PMORG și anchor packs;
 - inițiative, planuri, taskuri, angajamente, intervenții și rezultate;
-- orchestration contract, runnerul determinist și adaptorul Hermes;
+- orchestration contract, runnerul determinist și adaptoare de orchestrator (Hermes opțional);
 - Communication Gateway și adaptoare de canal;
 - politici de autonomie, aprobări, audit, observabilitate și moduri degradate;
 - sandboxul, datele sintetice și corpusul de evaluare.

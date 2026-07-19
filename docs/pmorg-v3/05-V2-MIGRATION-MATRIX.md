@@ -3,8 +3,8 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Clasificare Accepted; inventarul necesită revalidare la bootstrap |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 
 ## 1. Regula de migrare
 
@@ -38,7 +38,7 @@ Din SB3 păstrăm ca input de migrare:
 
 SB3 nu decide schema Semantic Core, topologia bazelor, UI-ul, limitele
 Turn Coordinator, integrarea Onyx ori forma finală a addon-urilor Odoo.
-Acestea sunt guvernate de `RB-1/C1` și se implementează în repository-ul separat
+Acestea sunt guvernate de `RB-1/C2` și se implementează în repository-ul separat
 `PMORG-Platform`.
 
 Un test SB3 devine test V3 numai după ce:
@@ -63,8 +63,8 @@ Un test SB3 devine test V3 numai după ce:
 | detectorul golului `pmorg.provenance.gap` | păstrăm și întărim | stare și controller determinist în addon/control-plane Odoo, receipts în Semantic Core, digest/rata de acoperire în Onyx-PMORG |
 | memorie externă numai prin MCP | rescriem | API intern de domeniu + MCP extern standard |
 | Semantic Core în același storage cu search | respingem | ledger autoritar separat de indexul reconstruibil |
-| Hermes ca runtime | păstrăm | adaptor după runner și contractul cognitiv |
-| Communication Gateway | adaptăm | intră în Turn Admission înainte de Hermes/runner; după privacy/evidence, același Turn Coordinator continuă din `AdmittedMessage` |
+| orchestrator persistent | reimplementăm prin contract | runner determinist în MVP; Hermes rămâne adaptor candidat |
+| Communication Gateway | adaptăm | intră în Turn Admission înainte de orchestrator/runner; după privacy/evidence, același Turn Coordinator continuă din `AdmittedMessage` |
 | comenzi Odoo înguste | păstrăm | fără ORM/SQL generic |
 | outbox/inbox, lease, idempotency | păstrăm | condiții obligatorii de acceptare |
 | UI PMORG în principal Odoo | rescriem | Onyx-PMORG devine workspace; Odoo rămâne formal/fallback |
@@ -97,7 +97,7 @@ tabele.
 - privacy și gateway ingestion intră în Turn Coordinator;
 - review-ul uman se restrânge la vocabular/ancoră; interpretarea claim-urilor
   nu se portează ca UI/coadă;
-- commitments/due/stale devin proiecții pentru Odoo, Hermes și UI;
+- commitments/due/stale devin proiecții pentru Odoo, orchestrator și UI;
 - receipt-ul specific chatter devine receipt generic, legat de efect;
 - REST-ul existent devine API intern versionat și MCP standard extern.
 
@@ -175,9 +175,9 @@ Aceste observații devin teste negative v3:
 
 | Componentă | Destinație |
 |---|---|
-| Hermes Kanban și `kanban_*` | nu se portează ca registry; doar idei de scheduling/retry în adaptor |
+| orice Kanban de orchestrator, inclusiv Hermes `kanban_*` | nu se portează ca registry; doar idei de scheduling/retry în adaptor |
 | `components/cc-bridge` | se retrage; runtime-ul cognitiv este Onyx-PMORG |
-| channel gateway | se adaptează la `MessageEnvelope` tranzitoriu, Turn Admission și `AdmittedMessage`; raw content nu traversează Hermes |
+| channel gateway | se adaptează la `MessageEnvelope` tranzitoriu, Turn Admission și `AdmittedMessage`; raw content nu traversează orchestratorul |
 | privacy gate | se păstrează ca invariantă deterministă de ingestion |
 | `pmorg.provenance.gap`, detector D1 și benchmark P/R | se portează în addon-ul Odoo ca state machine/controller determinist, folosind query-uri Semantic Core; nu se copiază granularitatea defectuoasă per-record |
 | cron/digest | se transformă în controller + proiecție UI/message |
@@ -193,7 +193,7 @@ Aceste observații devin teste negative v3:
 5. rescriem addon-urile Odoo din specificație și teste;
 6. portăm selectiv fixtures/worldgen și runnerul determinist;
 7. atingem M0 și apoi G3-A–G3-F;
-8. implementăm adaptorul Hermes pe contractul înghețat;
+8. calificăm un adaptor de orchestrator pe contractul înghețat; Hermes rămâne opțiune;
 9. evaluăm separat importul de date legacy; nu facem dual-write între
    Kanbanuri.
 

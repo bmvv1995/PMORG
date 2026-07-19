@@ -2,9 +2,9 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 | Lege | zero teste în producție |
 
 ## 1. Ce trebuie demonstrat
@@ -27,7 +27,7 @@ flowchart LR
       P["Onyx-PMORG"]
       S["Semantic Core"]
       O["Odoo"]
-      R["Runner / Hermes adapter"]
+      R["Runner / orchestrator adapter"]
       C["Simulated channel"]
     end
 
@@ -119,10 +119,21 @@ pmorg_product_version
 pmorg_spec_commit
 pmorg_platform_commit
 onyx_upstream_tag_and_sha
+onyx_surface + usage_mode
+artifact_set_hash + image_lock_hash
+build_qualification_manifest_hash + attestation_dsse_hash
+qualification_bundle_index_hash + evidence_bundle_index_hashes
+ee_inventory_report_hash | ce_boundary_report_hash, după suprafață
+deployment_payload_descriptor/fingerprint + target_descriptor/fingerprint
+target_measurement_dsse_hash + deployment_admission_dsse_hash + use_receipts
+distribution_payload/destination_descriptor_hashes
+distribution_measurement/admission_dsse_hashes + transfer use_receipts
+capability_catalog/disposition/evidence hashes
+provenance_scan/evidence_bundle hashes
 odoo_revision_and_image_digest
 semantic_schema_version
 contract_versions
-profile + module/pack fingerprints
+organization_profile + module/pack fingerprints
 world seed + world.lock
 scenario + policy versions
 clock/fault plan
@@ -167,7 +178,7 @@ unei funcții de siguranță.
 - registry/fingerprint mismatch;
 - identity binding absent ori ambiguu;
 - mesaj privacy/secret-denied: zero transcript, evidence, content ref/hash,
-  index, prompt ori checkpoint/log/input Hermes/runner; mesajul nu ajunge la
+  index, prompt ori checkpoint/log/input orchestrator/runner; mesajul nu ajunge la
   runtime; numai receipt metadata-only;
 - absența oricărui endpoint/action de review pentru interpretarea claim-ului;
 - auto-validare și validator neautorizat;

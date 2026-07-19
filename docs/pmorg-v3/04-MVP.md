@@ -2,10 +2,10 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
-| Orchestrare | runner determinist pe contractul final; fără Hermes în MVP |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
+| Orchestrare | runner determinist pe contractul final; fără orchestrator extern în MVP |
 | Comunicare | canal simulat pe contractul final |
 | Date | exclusiv sintetice, în sandbox separat de producție |
 
@@ -18,7 +18,7 @@
 > determinist?
 
 MVP-ul validează arhitectura produsului și longitudinalitatea structurală. Nu
-validează încă Hermes, un canal real, cererea comercială, comportamentul unui
+validează încă un orchestrator extern, un canal real, cererea comercială, comportamentul unui
 model pe distribuția reală ori operarea în producție.
 
 ## 2. Principiul de construcție
@@ -74,7 +74,25 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
-- zero cod Enterprise în artefactul CE al MVP-ului.
+- `onyx_surface` și `usage_mode` fixate într-un manifest detașat și payloaduri
+  DSSE peste catalogul/setul exact de artefacte și qualification/evidence
+  bundle byte-closed;
+- două builduri curate reproduc descriptorii, artifact-set/image-lock și toate
+  qualification/report payload hashes;
+- MVP-ul califică un build real pentru suprafața aleasă; o variantă CE este
+  publicabilă numai după un build CE real separat care trece `G3-A`, fără a
+  bloca MVP-ul EE;
+- ambele `development_test` admit numai sandbox și distribuție sintetice;
+  `ce + production` cere release admission, iar `ee + production` cere
+  suplimentar autorizare Enterprise, legate de target/destination fingerprint
+  și payloadul efectiv, după operație;
+- payloadul runtime și targetul sunt reconstruite la deploy, startup și
+  watchdog; lipsa revalidării quiesce-uiește workloadul și efectele sale înainte
+  de deadline. Distribuția revalidează payloadul/destinația până la commit și
+  abortă transferul fără bytes parțiali vizibili la mismatch ori expirare;
+- catalog complet peste cerințe, candidate-search/disposition exact-once și
+  provenance scan versionat, cu `reuse|patch|pmorg_independent`, bytes de
+  evidence și ADR/waiver când este cazul.
 
 ### 4.2 Odoo PMORG
 
@@ -107,7 +125,7 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 
 ### 4.4 Runner și canal simulat
 
-- consumă aceleași contracte ca Hermes și gateway-ul viitor;
+- consumă aceleași contracte ca orchestratorul și gateway-ul viitor;
 - listează și revendică atomic munca scadentă;
 - avansează numai prin `tick_id` emis de ceasul trusted;
 - livrează și primește mesaje cu identitate structurală;
@@ -117,7 +135,7 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 
 ## 5. Ce nu intră în MVP
 
-- adaptorul Hermes;
+- adaptorul unui orchestrator extern (Hermes rămâne candidat);
 - Telegram, Teams, Slack, email sau alt canal real;
 - date ori utilizatori reali;
 - LLM personas;
@@ -217,7 +235,20 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
-- artefactul CE nu conține cod Enterprise;
+- manifestul și DSSE payload/envelope detașate leagă catalogul/setul exact,
+  image lock, qualification index și toate evidence bytes care decid PASS;
+- 2/2 builduri curate au descriptorii și payload digesturile canonice identice;
+- surface claim-ul release-ului corespunde unui build real calificat; contract
+  fixtures exercită toate cele patru celule, fără a simula disponibilitatea
+  unei variante CE neconstruite;
+- `ce` are zero EE; orice `ee` are inventar complet;
+- truth table-ul celor patru celule trece pentru deployment, startup și
+  distribution; payloadul runtime și targetul sunt recomputate și la watchdog,
+  iar payloadul distribuit și destinația sunt recomputate/revalidate până la
+  commit; expiry produce quiesce/abort fail-closed;
+- capability catalog acoperă setul cerințelor, search/disposition este
+  exact-once, iar provenance scan-ul are coverage exact și zero
+  unreviewed/forbidden/nerezolvate;
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 
@@ -242,7 +273,7 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 ### G3-D — vertical slice M0
 
-Scenariul complet trece în `ORG-DIST`, fără LLM, Hermes sau canal real, iar
+Scenariul complet trece în `ORG-DIST`, fără LLM, orchestrator extern sau canal real, iar
 auditul leagă inițiativa de rezultat.
 
 ### G3-E — agnosticism organizațional
@@ -272,10 +303,11 @@ După MVP:
 
 Outputul modelului nu poate ocoli G3-B/G3-C.
 
-### G3-H — Hermes
+### G3-H — orchestrator extern (Hermes candidat)
 
-- G3-H1: adaptorul Hermes înlocuiește runnerul cu un agent determinist;
-- G3-H2: Hermes rulează operatorul înghețat la G3-G fără schimbarea Odoo,
+- G3-H1: adaptorul selectat înlocuiește runnerul ca executor determinist al contractului;
+- G3-H2: orchestratorul selectat rulează operatorul înghețat la G3-G fără
+  schimbarea Odoo,
   Semantic Core, scenariilor sau scorerului.
 
 ### G3-I — canal real în test

@@ -3,9 +3,9 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted |
-| Baseline | `RB-1/C1` |
+| Baseline | `RB-1/C2` |
 | Scope | MVP G3-A–G3-F |
-| Data | 2026-07-18 |
+| Data | 2026-07-19 |
 
 ## 1. Regula verdictului
 
@@ -39,14 +39,53 @@ G3-A–G3-F sunt conjunctive. MVP-ul este `PASS` numai dacă toate sunt
 |---|---|---|
 | `A-FORK-001` | tagul și SHA-ul Onyx și commitul PMORG sunt fixate | 100% prezente în manifest și UI/version endpoint |
 | `A-UPSTREAM-001` | suita upstream selectată trece pe baseline curat și fork | 100% teste obligatorii; excluderile au waiver versionat |
-| `A-LIC-001` | artefactul CE nu include cod Onyx `ee` | 0 fișiere, imports sau layers EE |
-| `A-PATCH-001` | modificările upstream sunt inventariate | 100% fișiere modificate apar în patch ledger |
+| `A-LIC-001` | build qualification este completă și content-addressed | release definition, expected catalog și policy maps sunt extern fixate și identice cu BQM; DSSE valid și temporal bounded; artifact set și qualification bundle identice cu manifestul; toate rolurile/schema obligatorii prezente; `ce`: 0 EE; orice `ee`: inventar complet; zero dangling/mismatch/unknown |
+| `A-SURFACE-001` | surface claim-ul este susținut de artefact real | fiecare variantă publicată are build real al suprafeței declarate și propriul G3-A; CE nu este declarat disponibil din fixtures; MVP-ul EE nu este blocat de un release CE separat |
+| `A-REPRO-001` | buildul este reproductibil | 2/2 builduri curate cu aceleași input snapshots au descriptorii în aceeași ordine și artifact-set, image-lock, qualification-bundle și toate report payload hashes identice; numai qualification-attestation/execution envelopes, receipt-urile și ferestrele temporale pot diferi |
+| `A-EVIDENCE-001` | lanțul criptografic este verificabil offline | 100% payloaduri DSSE valide; 100% trust/cert/revocation/receipt/resource/authorization refs rezolvă la bytes; zero autoreferințe, dangling refs ori trust auto-autorizat |
+| `A-REPORT-001` | rapoartele BQM sunt complete | 100% required roles, scheme și artifact coverage; zero missing/duplicate/dangling/unknown; zero cerințe catalog unmapped; conditional CE/EE set exact |
+| `A-LIC-002` | deployment/startup/revalidation admission este fail-closed | toate 4 celulele PASS și cele 4 combinații de clasă opusă deny, inclusiv ambele `production + synthetic`; runtime scope este exact entry-ul extern `deployment_runtime`, iar operația părinte nu poate fi schimbată la watchdog; payload descriptor și target descriptor/fingerprint reconstruite separat la deploy, startup și watchdog; zero missing/unexpected/duplicate; missing, not-yet-valid, expired, revoked, overdue-revalidation, clock-skew, unknown/unmeasurable, payload/envelope/build/target mismatch și trust root sintetic ne-listat refuzate/quiesced |
+| `A-LIC-003` | publish/export admission este fail-closed | toate 4 celulele PASS și cele 4 combinații de destinație opusă deny, inclusiv ambele `production + controlled_synthetic_registry`; distribution scope și metadata roles sunt entry-ul extern exact al operației părinte, care nu poate fi schimbată la revalidation; payloadul și destination descriptor/fingerprint recomputate înainte de transfer și după auth/redirect; unknown/unmeasurable, destination/principal/namespace/redirect change, replay, missing/not-yet-valid/expired/revoked/overdue/mismatch/trust root ne-listat refuzate; transfer activ revalidat și abortat înainte de deadline |
+| `A-PATCH-001` | fork-ul este thin, iar diff-ul upstream este inventariat exact | fiecare cale upstream modificată apare exact o dată în patch ledger și aparține seam allowlist-ului; 0 missing/duplicate și blob hashes conforme diff-ului; 0 module/reguli/tipuri de domeniu PMORG sub rădăcini upstream-owned |
+| `A-PATCH-002` | catalogul este închis peste cerințe | uniunea requirement refs este exact setul aplicabil din baseline; zero unmapped/unknown; capability IDs unice și exact un disposition record pentru 100% catalog |
+| `A-PATCH-003` | candidate search și cazul no-candidate sunt demonstrabile | source scopes corespund exact repository/commit/tree pinurilor Onyx ale BQM și sunt derivate independent; expected=scanned pentru CE/EE cerute, zero unreadable/unscanned/duplicate/unclassified; raw hits = candidates + rejects; qualification execută exact contract tests; `candidates=[]` numai pentru `pmorg_independent` demonstrat; evidence incomplet sau scan pe alt commit = `INVALID` |
+| `A-PATCH-004` | reuse-default nu poate fi ocolit tacit | pentru 100% recordurile cu candidat `pass`, orice `patch` ori `pmorg_independent` are ADR/waiver DSSE valid legat exact de spec/artifact/catalog/capability/candidați/disposition/implementation/ledger, authority grant și protector results; 0 decizii lipsă/expirate/replayable |
+| `A-PATCH-005` | `licensed_patch` păstrează granița EE | 100% sunt patchuri directe pe căi EE, cu exact un ledger owner, upstream Onyx, licență Enterprise și blob hashes; 0 căi PMORG-owned clasificate astfel și 0 în build `ce` |
+| `A-PATCH-006` | provenance și evidence sunt byte-closed | source scopes sunt exact pinurile PMORG-Platform/Onyx din BQM; coverage exact bilateral PMORG/EE; raw/classified matches în bijecție; exact/normalized/similarity fixtures detectate; rezoluțiile condiționale trec; 0 recorduri cross-build/surface/mode, unreadable/unscanned/unreviewed/invalid/forbidden/unresolved; 100% evidence refs rezolvă la bytes |
 | `A-MIG-001` | instalarea/migrarea din baze curate este repetabilă | 3/3 porniri curate PASS |
 | `A-RESTORE-001` | Odoo, Onyx și Semantic Ledger pot fi restaurate independent | 1 restore complet PASS pentru fiecare store per RC |
 | `A-SUPPLY-001` | imagini, dependențe și SBOM sunt fixate | 100% imagini prin digest; 0 vulnerabilități Critical/High netriate |
 
 Un risc Critical/High acceptat explicit nu dispare din raport; are owner,
 expirare și compensating control. Fără triere, gate-ul este FAIL.
+
+Cele patru celule surface×mode și clasele lor opuse sunt contract-tested numai
+cu fixtures/ținte/destinații sintetice. `A-LIC-001` și `A-SURFACE-001` se aplică
+separat fiecărui artefact real publicat: un PASS EE nu afirmă existența unei
+variante CE, iar CE devine disponibil numai după propriul build real PASS.
+
+Fault cases obligatorii pentru `A-LIC-*`, `A-EVIDENCE-*`, `A-REPORT-*` și
+`A-PATCH-*` includ separat: payload DSSE modificat; `payloadType` greșit;
+signature goală/necunoscută/revocată; trust policy diferit de pinul baseline;
+evidence blob lipsă ori cu hash/size greșit; revocation snapshot expirat;
+receipt/evidence pentru alt build, target ori destination; descriptor declarat
+sintetic dar derivat client; binding necunoscut/imposibil de măsurat; endpoint,
+account, namespace, principal ori redirect schimbat după preflight; admission
+reutilizat pentru alt payload; runtime bytes/image diferite de BQM; time receipt
+stale, rollback/fork de sequence ori uncertainty peste policy; workload activ
+după deadline; measurement/issued/verified future-dated; transfer care
+traversează deadline-ul; deployment/distribution scope policy substituit ori
+micșorat față de release definition sau cu alt baseline/surface/operație;
+build qualification/deviation decision future-dated, expirată ori cu
+revalidare restantă; `development_test` către client; role de
+qualification lipsă/duplicat/condițional greșit; OCI layer omis; catalog
+micșorat cu requirement nemapat; candidat `pass` + patch fără decizie;
+record/report/deviation pentru alt build, commit, surface ori mode; no-candidate
+din scan complet pe alt tree sau fără search bytes; copie EE sub cale PMORG etichetată
+`licensed_patch`; cod PMORG de domeniu sub rădăcină upstream ori patch upstream
+în afara seam allowlist-ului; revalidation ratată; ceas indisponibil ori skew
+peste policy.
+Fiecare caz produce determinist `FAIL` sau `INVALID` înaintea operației.
 
 ## 4. G3-B — Odoo, closed world și comenzi
 
@@ -86,7 +125,7 @@ expirare și compensating control. Fără triere, gate-ul este FAIL.
 | `C-MCP-001` | MCP este interoperabil și versionat | 100% contract tests cu un client MCP independent |
 | `C-TENANT-001` | cross-organization retrieval este refuzat | 0 rezultate/citations în toate cazurile negative |
 | `C-HIL-001` | omul/agentul cognitiv nu poate judeca interpretarea claim-ului | 0 verdicturi, approvals, tranziții sau actions/UI/API umane/agentice asupra claim-ului, inclusiv approve/reject integral și editarea kind/owner/termen/predicat/valoare; actorul fiecărei tranziții este serviciul de policy; suprafețele umane pozitive sunt numai vocabulary/anchor reconciliation |
-| `C-PRIVACY-001` | denylist/secrets gate refuză înaintea stocării și orchestrării persistente | 0 content, refs, hashes, transcripts, chunks, evidence, prompts ori checkpoint/log/input Hermes/runner; mesajul nu ajunge la runtime; exact 1 receipt metadata-only |
+| `C-PRIVACY-001` | denylist/secrets gate refuză înaintea stocării și orchestrării persistente | 0 content, refs, hashes, transcripts, chunks, evidence, prompts ori checkpoint/log/input orchestrator/runner; mesajul nu ajunge la runtime; exact 1 receipt metadata-only |
 
 Scorurile probabilistice ale unui model nu participă la G3-C. Pentru G3-G,
 pragurile de extraction/recall se stabilesc pe calibration și se îngheață
@@ -163,7 +202,7 @@ SUT rămâne simultan defect de produs și nu este ștearsă de verdictul INVALI
 
 ## 10. Performanță și cost
 
-`RB-1/C1` cere măsurarea, nu inventează un SLO independent de hardware:
+`RB-1/C2` cere măsurarea, nu inventează un SLO independent de hardware:
 
 - latență P50/P95/P99 pe Turn API, Odoo command și Semantic recall;
 - throughput, backlog, outbox lag și index lag;
@@ -184,7 +223,14 @@ o valoare nu este declarată arbitrar defect funcțional în MVP.
 | `MEM-001..012` | `C-*`, `F-MEM-*`, `F-GAP-*` | semantic projection, validation/timeline și coverage report |
 | `INT-001..006` | `C-PRIVACY-*`, `D-TRACE-*`, channel contract tests | privacy receipt și message/evidence/receipt chain |
 | `ORC-001..006` | runner contracts, `F-*` | run/task event trace |
-| `PLT-001..005` | `A-*` | baseline manifest, SBOM, patch/license reports |
+| `PLT-001` | `A-FORK-001`, `A-UPSTREAM-001`, `A-LIC-001`, `A-SURFACE-001` | upstream/spec pins, version endpoint, surface claim și fork qualification |
+| `PLT-002` | `A-MIG-001`, `A-RESTORE-001`, `C-INDEX-001`, `C-MCP-001` | Semantic Core schema/migrations, independent store și API contract |
+| `PLT-003` | `A-RESTORE-001`, `E-ISOLATE-001` | DB/role manifests, negative cross-store probes și restore reports |
+| `PLT-004` | `A-PATCH-001` | ownership-boundary scan, seam allowlist, exact upstream diff și patch-ledger report |
+| `PLT-005` | `A-LIC-001`, `A-REPRO-001`, `A-EVIDENCE-001`, `A-REPORT-001` | artifact set, build payload/DSSE, qualification/evidence bundle și rapoarte complete |
+| `PLT-006` | `A-PATCH-002..006` | capability catalog/search/disposition și provenance/evidence reports |
+| `PLT-007` | `A-LIC-002` | per-target measurement și deployment admission |
+| `PLT-008` | `A-LIC-003` | per-destination distribution admission |
 | `SEC-001..006` | `B-ACL-*`, `C-TENANT-*`, `X-*` | security scorecard și negative traces |
 | `EVAL-001..007` | G3-A–G3-F | signed run bundle și verdict |
 
@@ -192,10 +238,74 @@ o valoare nu este declarată arbitrar defect funcțional în MVP.
 
 ```text
 baseline-manifest.json
+expected-artifact-catalog.json
+artifact-set.json
 image-lock.json
-sbom/
-license-report.json
-patch-ledger-report.json
+
+qualification/build-qualification-manifest.json
+qualification/release-build-definition.payload.json
+qualification/release-build-definition.dsse.json
+qualification/build-recipe.json
+qualification/build-input-set.json
+qualification/runtime-scope-policy-map.json
+qualification/build-qualification-attestation.payload.json
+qualification/build-qualification-attestation.dsse.json
+qualification/qualification-bundle-index.json
+qualification/qualification-policy-map.json
+qualification/surface-mode-report.json
+qualification/capability-catalog.json
+qualification/capability-disposition-report.json
+qualification/capability-evidence-bundle-index.json
+qualification/capability-scope-rule.json
+qualification/applicable-requirement-set.json
+qualification/capability-disposition-records/**
+qualification/candidate-search/**
+qualification/candidate-qualification/**
+qualification/post-disposition-qualification/**
+qualification/capability-deviation-decisions/**
+qualification/provenance-scan-report.json
+qualification/provenance-evidence-bundle-index.json
+qualification/provenance-source-scopes/**
+qualification/provenance-path-inventory.json
+qualification/provenance-raw-matches.json
+qualification/provenance-match-records.json
+qualification/ee-inventory-report.json | qualification/ce-boundary-report.json
+qualification/sbom-index.json
+qualification/sbom/**
+qualification/license-report.json
+qualification/patch-ledger-report.json
+qualification/vulnerability-report.json
+qualification/upstream-test-report.json
+
+evidence/indexes/*.json
+evidence/trust-policy/**
+evidence/certificates/**
+evidence/revocation/**
+evidence/trusted-time/**
+evidence/verifier-receipts/**
+evidence/resources/**
+evidence/authorizations/**
+evidence/provenance/**
+
+deployments/*/*/deployment-payload-descriptor.json
+deployments/*/*/target-descriptor.json
+deployments/*/*/target-measurement-attestation.payload.json
+deployments/*/*/target-measurement-attestation.dsse.json
+deployments/*/*/deployment-admission.payload.json
+deployments/*/*/deployment-admission.dsse.json
+deployments/*/*/use-receipts/*.payload.json
+deployments/*/*/use-receipts/*.dsse.json
+
+distributions/*/*/distribution-payload-descriptor.json
+distributions/*/*/release-metadata-bundle-index.json
+distributions/*/*/destination-descriptor.json
+distributions/*/*/destination-measurement-attestation.payload.json
+distributions/*/*/destination-measurement-attestation.dsse.json
+distributions/*/*/distribution-admission.payload.json
+distributions/*/*/distribution-admission.dsse.json
+distributions/*/*/use-receipts/*.payload.json
+distributions/*/*/use-receipts/*.dsse.json
+
 migration-and-restore-report.json
 profiles/*/registry-snapshot.json
 profiles/*/world.lock
@@ -207,5 +317,9 @@ runs/*/scorecard.json
 runs/*/verdict.json
 ```
 
-Fără aceste artefacte, afirmația de PASS nu este reproductibilă și gate-ul
-este `INVALID`.
+Artefactele de authorization, metadata comercială, resource evidence,
+deployment/distribution descriptors și receipts sunt `sealed_private`.
+Manifestele publice conțin numai refs content-addressed, verdicturi și coduri
+de refuz metadata-only. Fără artefactele de mai sus sau dacă orice hash referit
+de BQM, DSSE payload, admission ori scorecard nu rezolvă la bytes în bundle,
+afirmația de PASS nu este reproductibilă și gate-ul este `INVALID`.

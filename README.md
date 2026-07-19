@@ -1,14 +1,15 @@
 # PM organizațional
 
-> **PMORG v3 — direcția de implementare acceptată (2026-07-18):** produsul
-> rămâne operatorul organizațional persistent Odoo-first, dar noua generație
-> se construiește ca fork guvernat al Onyx CE, cu PMORG Semantic Core drept
-> bounded context first-class și Hermes drept orchestrator persistent vizat.
-> Definiția canonică începe în
+> **PMORG v3 — direcția de implementare acceptată (2026-07-19):** produsul
+> rămâne operatorul organizațional persistent Odoo-first, construit ca fork
+> guvernat al Onyx, cu PMORG Semantic Core drept bounded context first-class și
+> un contract de orchestrator persistent implementation-agnostic; Hermes este
+> opțional. Fiecare build declară separat suprafața Onyx `ce|ee` și modul de
+> utilizare `development_test|production`. Definiția canonică începe în
 > [PMORG v3 — definiția produsului](docs/pmorg-v3/00-PRODUCT.md). V2 și
 > sandboxurile existente rămân referințe înghețate; instrucțiunile de
 > instalare din acest README descriu implementarea v1, nu v3. Cerința v3 este
-> înghețată în `RB-1/C1`. La orice contradicție de direcție între v3 și v2,
+> înghețată în `RB-1/C2`. La orice contradicție de direcție între v3 și v2,
 > documentele v3 prevalează.
 
 > **PMORG v2 (frozen-reference, 2026-07-18):** definiția
@@ -28,15 +29,15 @@ Acest repository nu este codebase-ul produsului V3. Rolurile sunt separate:
 
 | Artefact | Statut |
 |---|---|
-| `docs/pmorg-v3/` | cerința, contractele și criteriile canonice V3 (`RB-1/C1`) |
+| `docs/pmorg-v3/` | cerința, contractele și criteriile canonice V3 (`RB-1/C2`) |
 | codul V1/V2, sandboxurile și în special SB3 | baseline executabil de referință pentru migrare și regresie |
 | `evaluation/`, `worldgen/` și scenariile longitudinale | active de evaluare care se portează și se recalifică pe V3 |
-| repository-ul separat `PMORG-Platform` | viitorul codebase V3, pornit dintr-un fork Onyx CE fixat |
+| repository-ul separat `PMORG-Platform` | viitorul codebase V3, pornit dintr-un fork Onyx fixat |
 
 „Baseline executabil de referință” înseamnă că SB3 demonstrează comportamente
 utile și furnizează teste, fixtures și oracles. Nu înseamnă că schema,
 topologia, UI-ul sau codul SB3 sunt implementarea V3. Un comportament devine
-V3 numai după portare pe contractele `RB-1/C1` și calificare în
+V3 numai după portare pe contractele `RB-1/C2` și calificare în
 `PMORG-Platform`.
 
 ## Implementarea curentă (v1 / snapshot)

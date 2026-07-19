@@ -3,7 +3,7 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted |
-| Baseline | `RB-1/C1` |
+| Baseline | `RB-1/C2` |
 | Suite | `ORG-CONFORMANCE-v1` |
 | Data | 2026-07-18 |
 

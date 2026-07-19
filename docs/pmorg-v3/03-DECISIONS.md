@@ -2,15 +2,18 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | ADR-301–316 Accepted |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | ADR-301–305, 307–312 și 314–318 Accepted; ADR-306/313 Superseded |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 
 O decizie `Accepted` este normativă pentru v3. ADR-309–314 au fost acceptate
 la requirements freeze `RB-1`, cu interpretările din
 [requirements baseline](08-REQUIREMENTS-BASELINE.md). ADR-315–316 sunt
-corrigendum-ul `RB-1/C1`, rezultat din review-ul adversarial și decizia
-ownerului consemnate în `docs/correspondence/001*`.
+corrigendum-ul `RB-1/C1`. ADR-317–318 formează corrigendum-ul `RB-1/C2`,
+rezultat din clarificările ownerului privind profilurile Onyx și caracterul
+implementation-agnostic al orchestratorului, consemnate în
+[decizia ownerului `003a`](../correspondence/003a-decizie-owner-rb1-c2.md);
+`002` rămâne corespondența de implementare și review.
 
 ## ADR-301 — V3 este o nouă generație de implementare
 
@@ -23,13 +26,15 @@ referințe și surse de teste, nu baza incrementală obligatorie.
 **Consecințe:** nu rescriem cerința ca să justificăm codul existent și nu
 declarăm prototipurile drept implementare v3.
 
-## ADR-302 — PMORG se construiește ca fork al Onyx CE
+## ADR-302 — PMORG se construiește ca fork guvernat al Onyx
 
 **Status:** Accepted (2026-07-18)
 
-**Decizie:** Onyx Community Edition devine codebase-ul inițial pentru chat,
-UI, agenți, knowledge, RAG, model routing și actions. PMORG este nucleu
-first-class al produsului rezultat, nu plugin opțional.
+**Decizie:** release-ul Onyx fixat în manifest devine codebase-ul inițial
+pentru chat, UI, agenți, knowledge, RAG, model routing și actions. PMORG este
+nucleu first-class al produsului rezultat, nu plugin opțional. Fiecare build
+fixează separat `onyx_surface: ce|ee` și
+`usage_mode: development_test|production` într-un manifest semnat.
 
 **Consecințe:** pipeline-ul conversațional PMORG nu poate fi ocolit prin
 endpointuri generice Onyx. Fork-ul are nevoie de politică upstream și
@@ -68,9 +73,9 @@ rămâne contract extern, nu singura cale internă.
 **Consecințe:** indexurile sunt proiecții reconstruibile. Evidence, claims,
 validările și istoria semantică nu depind de recrearea indexului.
 
-## ADR-306 — Hermes orchestrează, Onyx-PMORG execută pași cognitivi
+## ADR-306 — Hermes orchestrează, Onyx-PMORG execută pași cognitivi (superseded)
 
-**Status:** Accepted (2026-07-18)
+**Status:** Superseded de ADR-318 (2026-07-19); păstrat pentru istoric
 
 **Decizie:** Hermes rămâne orchestratorul persistent vizat. El apelează un
 contract `execute_cognitive_step`; nu devine sursa canonică a taskurilor,
@@ -110,8 +115,8 @@ fi trecut pe date ori infrastructură de producție.
 Turn Coordinator: verificare context, poartă de intimitate înaintea stocării,
 evidence capture, recall, cognitive execution, tool preflight, semantic
 validation și receipts. Gateway/UI trimit raw content numai în Turn Admission;
-Hermes/runnerul și runtime-ul primesc după acceptare doar `AdmittedMessage`
-fără content/ref/hash. Un refuz nu traversează orchestratorul persistent.
+orchestratorul/runnerul și runtime-ul primesc după acceptare doar
+`AdmittedMessage` fără content/ref/hash. Un refuz nu traversează orchestratorul persistent.
 
 **Motiv:** pașii de siguranță nu trebuie să depindă de alegerea modelului de
 a apela un tool.
@@ -153,9 +158,9 @@ taskuri și fallback manual. UI-ul nu oferă coadă de adnotare umană pentru
 
 **Motiv:** evită două experiențe cognitive paralele fără să ascundă ERP-ul.
 
-## ADR-313 — Distribuția inițială folosește numai suprafața Onyx CE
+## ADR-313 — Distribuția inițială folosește numai suprafața Onyx CE (superseded)
 
-**Status:** Accepted (2026-07-18; CE-only pentru sandbox/MVP)
+**Status:** Superseded de ADR-317 (2026-07-19); păstrat pentru istoric
 
 **Decizie:** baseline-ul v3 pornește din Onyx CE și exclude codul/directoarele
 Enterprise din build până când există o decizie comercială și juridică
@@ -215,6 +220,74 @@ v3; operațiile, erorile și idempotency se portează prin maparea din
 de test legacy este izolat; rândurile inbox fără request hash verificabil nu
 devin stare autoritativă v3.
 
+
+## ADR-317 — Suprafața Onyx și modul de utilizare sunt axe independente
+
+**Status:** Accepted prin
+[decizia ownerului `003a`](../correspondence/003a-decizie-owner-rb1-c2.md)
+(2026-07-19)
+
+**Decizie:** fiecare build fixează `onyx_surface: ce|ee` și
+`usage_mode: development_test|production` într-un
+`BuildQualificationManifest` canonic. Manifestul este legat de o atestare DSSE
+detașată peste setul exact de artefacte
+deployabile; niciunul nu este inclus în imaginile ale căror digesturi le leagă.
+Două builduri curate independente trebuie să producă aceiași descriptori și
+aceleași artifact-set, qualification și report payload hashes, ignorând numai
+attestation/execution envelopes și timpul emiterii.
+
+O capabilitate Onyx existentă se reutilizează implicit dacă trece contractele
+PMORG, izolarea, securitatea și constrângerile comerciale. Un catalog versionat,
+recorduri condițional valide și un report exact-once fac decizia
+`reuse|patch|pmorg_independent` verificabilă. Abaterea de la un candidat
+calificat cere ADR/waiver. Codul EE nu se copiază în module PMORG.
+
+Orice `development_test`, indiferent de suprafață, admite numai o țintă și o
+destinație de distribuție sintetice, măsurate și semnate.
+`ce + production` cere admission de release legat de artefact și ținta client.
+`ee + production` cere suplimentar autorizare Onyx Enterprise verificată.
+Payloadul runtime și target fingerprint-ul sunt derivate din bytes/API-urile
+trusted și descriptorii canonici ai artefactelor, bindingurilor de date,
+identități, canale, secrets, workload și network policy, apoi reconstruite la
+deploy, startup și fiecare revalidare. Necunoscut, imposibil de măsurat,
+expirat, revocat, build/payload/target mismatch ori verifier neacceptat refuză
+fail-closed; watchdog-ul quiesce-uiește workloadul înaintea deadline-ului și
+blochează efectele până la un admission nou valid.
+Publicarea/exportul trece printr-un distribution admission separat.
+Payloadul efectiv și descriptorul/fingerprint-ul destinației sunt reconstruite
+din bytes și APIs trusted imediat înainte de transfer; declarația apelantului
+nu poate stabili clasa destinației. Transferul activ se revalidează până la
+commit și este abortat fără bytes parțiali vizibili dacă ar traversa deadline-ul.
+
+Patchurile directe asupra Software-ului EE și drepturile aferente rămân sub
+termenii Onyx Enterprise; numai modulele PMORG create independent au ownership
+PMORG separat. Identificatorii comerciali sunt opaci/HMAC, recordurile complete
+sunt sealed, iar bundle-ul public conține numai hash și verdict.
+
+**Consecințe:** suprafața `ce` rămâne calificabilă și verifică absența codului
+EE, dar nu este critical path pentru Semantic Core, contracte sau integrarea
+PMORG în Onyx. O distribuție CE nu poate fi declarată disponibilă până când un
+build CE real nu trece propriul `G3-A`; MVP-ul cu suprafață EE nu așteaptă acel
+release separat. Suita de contract testează toate cele patru celule cu fixtures
+sintetice, iar fiecare release candidate califică artefactul real al suprafeței
+declarate. `G3-A` verifică reproducibilitatea,
+admission-ul de deploy/startup/distribution, capability disposition și
+proveniența. Un flag, o etichetă, un URI mutabil ori o promisiune viitoare de
+licențiere nu pot autoriza producția.
+
+## ADR-318 — Contractul orchestratorului este implementation-agnostic
+
+**Status:** Accepted prin clarificarea ownerului (2026-07-19)
+
+**Decizie:** produsul cere un orchestrator persistent care implementează
+contractele PMORG de scheduling, retry, checkpoint și reluare. Hermes este o
+implementare candidată și poate fi selectat prin adaptor, dar nu este cerință
+normativă. Runnerul determinist implementează același contract în MVP.
+
+**Consecințe:** Odoo și Semantic Core nu depind de API-uri sau Kanban Hermes.
+Înlocuirea runnerului cu Hermes ori cu alt orchestrator calificat nu schimbă
+ownership-ul, contractele sau starea business canonică.
+
 ## Relația cu ADR-urile v2
 
 | ADR v2 | Statut în v3 |
@@ -222,11 +295,11 @@ devin stare autoritativă v3.
 | 001 — PMORG este aplicație Odoo | Superseded de 302–303; Odoo-first rămâne |
 | 002 — anchor packs | Reaffirmed de 304 |
 | 003 — `project.task` canonic | Reaffirmed de 307 |
-| 004 — runtime și memoria externe | Superseded de 305–306; ownership-ul rămâne separat |
+| 004 — runtime și memoria externe | Superseded de 305 și 318; ownership-ul rămâne separat |
 | 005 — admitere validată în memorie | Reaffirmed |
 | 006 — comenzi agentice controlate | Reaffirmed |
 | 007 — longitudinalitate prin stare persistentă | Reaffirmed |
-| 008 — Hermes după runner | Reaffirmed de 306 |
+| 008 — Hermes după runner | Superseded de 318; adaptor opțional după runner |
 | 009 — MVP real Odoo + memorie | Superseded: v3 include și fork-ul Onyx-PMORG |
 | 010 — zero teste în producție | Reaffirmed de 308 |
 | 011 — produs unic, addon-uri Odoo | Superseded ca topologie de 302 și 305 |

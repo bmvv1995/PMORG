@@ -2,9 +2,9 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 
 ## 1. Obiectiv
 
@@ -19,7 +19,7 @@ explicite.
 
 ## 2. Repository-uri
 
-Modelul acceptat în `RB-1/C1` este:
+Modelul acceptat în `RB-1/C2` este:
 
 | Repo | Responsabilitate |
 |---|---|
@@ -36,7 +36,7 @@ PMORG-Platform/
 ├── backend/
 │   ├── onyx/                       # upstream-owned; patch minim
 │   └── pmorg/
-│       ├── domain/                 # fără importuri Onyx/Odoo/Hermes
+│       ├── domain/                 # fără importuri Onyx/Odoo/orchestrator concret
 │       ├── application/
 │       ├── semantic_core/
 │       ├── interaction/            # Turn Coordinator
@@ -44,7 +44,7 @@ PMORG-Platform/
 │       ├── integrations/
 │       │   ├── onyx/
 │       │   ├── odoo/
-│       │   ├── hermes/
+│       │   ├── orchestrator/
 │       │   └── gateway/
 │       ├── server/
 │       └── mcp/
@@ -56,7 +56,7 @@ PMORG-Platform/
 │   └── pmorg_anchor_*/
 ├── services/
 │   ├── semantic-core/
-│   ├── hermes-adapter/
+│   ├── orchestrator-adapters/      # Hermes poate fi un adaptor
 │   └── communication-gateway/
 ├── contracts/
 │   ├── context/
@@ -81,10 +81,14 @@ ownership nu se schimbă.
 - Semantic Core nu importă modelele de persistență Onyx.
 - adaptoarele pot implementa porturile PMORG folosind API-urile sistemelor;
 - codul Onyx apelează PMORG prin seams inventariate;
+- modulele, regulile și tipurile de domeniu PMORG există exclusiv în
+  rădăcinile PMORG-owned; fișierele upstream pot conține numai wiring-ul minim
+  al seam-urilor allowlisted, verificat prin boundary scan și patch ledger;
 - Odoo este accesat numai prin API, niciodată prin conexiune directă la DB;
 - nu există foreign keys între bazele Odoo, Onyx și Semantic Core;
-- modificarea unui fișier upstream în afara allowlist-ului cere ADR sau
-  actualizarea explicită a patch ledger-ului.
+- modificarea unui fișier upstream în afara seam allowlist-ului este refuzată;
+  extinderea allowlist-ului cere ADR, boundary-policy update, patch ledger și
+  teste protectoare înainte de build, nu o excepție declarată ulterior.
 
 ## 4. Remote-uri și baseline
 
@@ -131,14 +135,41 @@ Pentru fiecare fișier upstream modificat se consemnează:
 
 ```text
 path · motiv · owner · upstream issue/PR, dacă există
+license_class · ownership terms pentru patch · suprafață Onyx
 seam folosit · test protector · data ultimei revalidări
 conflict/rebase notes · plan de eliminare, dacă este temporar
 ```
 
 Se contribuie upstream schimbările generice utile — hooks, extension seams,
-bugfixuri — fără a muta semantica PMORG în upstream. Patch budget-ul se
-raportează la fiecare release: număr de fișiere și linii upstream atinse,
-conflicte și timp de integrare.
+bugfixuri — fără a muta semantica PMORG în upstream. Patchurile directe asupra
+codului Onyx EE sunt marcate `license_class=onyx-enterprise` și nu sunt
+revendicate drept cod PMORG independent; modificările și patchurile rămân sub
+termenii Onyx Enterprise. Patch budget-ul se raportează la fiecare release:
+număr de fișiere și linii upstream atinse, conflicte și timp de integrare.
+
+### Capability disposition
+
+Un catalog versionat enumeră fiecare capabilitate necesară produsului și
+cerințele PMORG pe care le deservește. Setul cerințelor aplicabile este derivat
+din baseline printr-o regulă fixată; nu poate fi micșorat de generatorul
+catalogului. Pentru fiecare element, release-ul emite exact un record cu:
+candidate search peste corpus/commit/suprafețe fixate, rezultatele brute și
+clasificarea hiturilor, candidații Onyx și referințele lor de cod, verdictul de
+calificare, decizia `reuse|patch|pmorg_independent`, clasa de licență și
+testele/evidence. Zero candidați este un rezultat valid numai cu search evidence
+complet și `pmorg_independent`. Orice `patch` ori `pmorg_independent` în
+prezența unui candidat `pass` cere ADR/waiver. Lipsa unui element, o cerință
+nemapată, evidence dangling ori o decizie nedeclarată invalidează `G3-A`.
+
+Raportul include și proveniența tuturor căilor PMORG-owned. Scanul compară
+hash-uri și fingerprints normalizate cu arborii EE fixați; o potrivire exactă
+sau similaritate peste prag intră în review de proveniență și blochează
+calificarea până la rezolvare. `licensed_patch` este permis numai pentru o
+modificare directă într-o cale upstream EE, cu unicul owner din patch ledger,
+bloburile fixate și `license_class=onyx-enterprise`; nu poate reclasifica o
+copie EE aflată într-o cale PMORG-owned. Path inventory, match records și
+evidence bytes sunt content-addressed și au coverage exact. Acest control nu
+revendică ownership asupra patchurilor EE.
 
 ## 7. Licențiere
 
@@ -154,30 +185,81 @@ Repository-ul Onyx declară:
 Surse oficiale: [licența repository-ului Onyx](https://github.com/onyx-dot-app/onyx/blob/main/LICENSE)
 și [Onyx Enterprise License](https://github.com/onyx-dot-app/onyx/blob/main/backend/ee/LICENSE).
 
-Politica MVP:
+Politica de build declară două axe independente:
 
-1. buildul CE exclude directoarele și importurile EE;
-2. CI scanează source tree, dependency graph și imagini pentru cod EE;
-3. notice-ul Onyx și licențele third-party sunt păstrate;
-4. brandul produsului este PMORG, cu atribuirea cerută;
-5. orice folosire a EE în producție cere licență validă și decizie separată;
-6. înaintea primei distribuții comerciale se face review juridic al buildului
-   concret, nu numai al intenției arhitecturale.
+1. `onyx_surface: ce|ee`;
+2. `usage_mode: development_test|production`;
+3. `ce` exclude directoarele/importurile EE și este scanat în source tree,
+   dependency graph și fiecare layer salvat;
+4. orice build cu `onyx_surface: ee` inventariază complet capabilitățile,
+   fișierele, dependențele, patchurile și layers EE;
+5. orice `usage_mode=development_test`, CE sau EE, admite numai sandbox și
+   registry/destinație sintetice și refuză client deployment/distribution;
+6. `ce + production` cere release/deployment admission legat de setul de
+   artefacte și ținta client;
+7. `ee + production` cere suplimentar autorizare verificabilă pentru entitate,
+   seats/scope și acord;
+8. o capabilitate Onyx se reutilizează implicit numai dacă trece contractele
+   PMORG, izolarea, securitatea și constrângerile comerciale; abaterea cere ADR
+   sau waiver versionat;
+9. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
+   termenii Onyx Enterprise;
+10. axele și dovezile care decid PASS sunt legate de setul exact de artefacte
+    prin manifest și envelope semnat, detașate de imaginile calificate;
+11. deploy/startup/watchdog reconstruiesc payloadul runtime și
+    descriptor/fingerprint-ul țintei, apoi validează measurement și
+    `DeploymentAdmissionRecord` prin payload + DSSE;
+    publicarea/exportul reconstruiește bytes/subsetul distribuit și
+    descriptorul/fingerprint-ul destinației din APIs trusted, apoi validează
+    separat measurement + `DistributionAdmissionRecord` înaintea primului byte
+    și revalidează până la commit, cu quiesce/abort înainte de deadline;
+12. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
+    producții sau distribuții comerciale se face review juridic al buildului
+    concret.
 
 Un risc important: documentația Onyx indică faptul că RBAC-ul pentru agenți,
 actions și documente și accesul diferențiat la documente sunt funcții
 Enterprise. Vezi [Onyx Access Controls](https://docs.onyx.app/security/architecture/access_controls).
-Prin urmare, până la o decizie de licențiere sau o implementare independentă
-auditată, MVP-ul CE folosește corpus sintetic cu acces uniform. ACL-ul Odoo și
-izolarea PMORG rămân obligatorii, dar nu sunt prezentate ca substitut automat
-pentru permission-aware retrieval în knowledge-ul Onyx.
+Prin urmare, `ce` folosește corpus sintetic cu acces uniform până când
+permission-aware retrieval este calificat. Suprafața `ee` poate folosi
+controlul de acces Onyx existent, dar îl califică independent.
+
+Un „client deployment” este orice țintă care conține ori poate accesa date,
+identități, canale, credențiale sau endpointuri organizaționale nesintetice.
+Orice resursă necunoscută ori imposibil de măsurat clasifică ținta fail-closed
+drept client. Descriptorul canonic acoperă workload identity, bindingurile de
+date/identitate/canal/secrets, resource-classification report și network policy;
+fingerprint-ul său se recompută independent la deploy și la fiecare startup.
+
+Ambele suprafețe în `development_test` cer measurement attestation semnată
+pentru sandbox și refuză targetul client. Publicarea/exportul cere admission
+separat și permite numai registry/destinație sintetică controlată.
+`ce + production` cere admission de release; `ee + production` cere
+suplimentar autorizare Onyx Enterprise. Dovezile sunt content-addressed, au
+trust root, timp trusted, valabilitate și revocation status; URI-urile singure
+nu sunt evidence. Câmpurile comerciale sunt opace/HMAC și rămân sealed.
+Verificarea pozitivă și refuzurile folosesc numai fixtures, ținte și
+credențiale sintetice. ACL-ul Odoo și izolarea PMORG rămân obligatorii.
 
 ## 8. Gate-uri pentru fiecare upgrade
 
 ### Fork și build
 
 - build upstream curat înainte de aplicarea modificărilor PMORG;
-- zero cod EE în artefactul CE;
+- conformitate exhaustivă cu cele patru celule: zero EE pentru `ce`; inventar
+  complet pentru orice `ee`; target/distribution sintetic pentru ambele
+  `development_test`; release admission pentru `ce + production`;
+  autorizare Enterprise suplimentară pentru `ee + production`;
+- două builduri curate reproduc descriptorii, artifact-set/image-lock,
+  qualification bundle index și toate report payload hashes;
+- build attestation, runtime/distribution payload measurement, target/destination
+  measurement și admissions DSSE validează
+  missing/not-yet-valid/expired/revoked/mismatch/untrusted, cu trusted-time
+  receipts și watchdog/abort la revalidation deadline;
+- capability search/disposition și provenance reports au denominatori externi,
+  coverage bilateral, nested evidence byte-closed și zero cod EE copiat;
+- boundary scan-ul are zero semantică PMORG sub rădăcini upstream și fiecare
+  schimbare upstream aparține seam allowlist-ului și patch ledger-ului;
 - toate imaginile și dependențele fixate;
 - nicio modificare upstream neinventariată;
 - testele upstream și PMORG verzi.
