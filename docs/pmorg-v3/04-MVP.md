@@ -74,10 +74,15 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
-- `onyx_surface` și `usage_mode` declarate separat; `ce` conține zero cod
-  Enterprise, orice suprafață `ee` are inventar complet, `ee + development_test`
-  blochează tehnic producția/distribuirea, iar `ee + production` cere dovadă
-  validă de autorizare pentru entitate și seats/scope.
+- `onyx_surface` și `usage_mode` fixate într-un
+  `BuildQualificationManifest` semnat; `ce` conține zero cod Enterprise,
+  orice suprafață `ee` are inventar complet, iar fiecare deploy cere un
+  `DeploymentAdmissionRecord` legat de build și țintă;
+- `ee + development_test` admite numai sandbox sintetic atestat și blochează
+  tehnic producția/distribuirea; `ee + production` cere autorizare verificată
+  pentru entitate, seats/scope, acord și valabilitate;
+- catalog versionat al capabilităților necesare și disposition report complet,
+  cu `reuse|patch|pmorg_independent`, evidence și ADR/waiver când este cazul.
 
 ### 4.2 Odoo PMORG
 
@@ -220,9 +225,14 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
-- artefactul respectă matricea declarată: `ce` fără cod Enterprise; orice
-  suprafață `ee` cu inventar complet; `ee + development_test` cu production
-  guard; `ee + production` numai cu autorizare validă și verificabilă;
+- `BuildQualificationManifest` fixează digestul, `onyx_surface`,
+  `usage_mode`, SBOM-ul, inventarul EE condițional și verifier receipt-ul;
+- `ce` are zero cod Enterprise; orice suprafață `ee` are inventar complet;
+- `DeploymentAdmissionRecord` refuză un `ee + development_test` pe țintă
+  client și refuză `ee + production` fără autorizare validă, semnată și legată
+  de build/țintă;
+- capability-disposition report-ul acoperă 100% catalogul necesar și justifică
+  fiecare abatere de la reuse-default;
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 
