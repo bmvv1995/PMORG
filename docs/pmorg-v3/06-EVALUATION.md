@@ -121,11 +121,15 @@ pmorg_platform_commit
 onyx_upstream_tag_and_sha
 onyx_surface + usage_mode
 artifact_set_hash + image_lock_hash
-build_qualification_manifest_hash + attestation_hash + qualification_bundle_hash
+build_qualification_manifest_hash + attestation_dsse_hash
+qualification_bundle_index_hash + evidence_bundle_index_hashes
 ee_inventory_report_hash | ce_boundary_report_hash, după suprafață
-target_descriptor_hash + target_fingerprint + measurement_attestation_hash
-deployment_admission_record_hash + distribution_admission_record_hashes
-capability_catalog/disposition hashes + provenance_scan_report_hash
+deployment_payload_descriptor/fingerprint + target_descriptor/fingerprint
+target_measurement_dsse_hash + deployment_admission_dsse_hash + use_receipts
+distribution_payload/destination_descriptor_hashes
+distribution_measurement/admission_dsse_hashes + transfer use_receipts
+capability_catalog/disposition/evidence hashes
+provenance_scan/evidence_bundle hashes
 odoo_revision_and_image_digest
 semantic_schema_version
 contract_versions

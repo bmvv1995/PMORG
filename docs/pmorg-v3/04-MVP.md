@@ -74,15 +74,25 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
-- `onyx_surface` și `usage_mode` fixate într-un manifest/attestation
-  detașate și semnate peste întregul artifact set și qualification bundle;
-- două builduri curate reproduc același artifact-set și qualification payload;
+- `onyx_surface` și `usage_mode` fixate într-un manifest detașat și payloaduri
+  DSSE peste catalogul/setul exact de artefacte și qualification/evidence
+  bundle byte-closed;
+- două builduri curate reproduc descriptorii, artifact-set/image-lock și toate
+  qualification/report payload hashes;
+- MVP-ul califică un build real pentru suprafața aleasă; o variantă CE este
+  publicabilă numai după un build CE real separat care trece `G3-A`, fără a
+  bloca MVP-ul EE;
 - ambele `development_test` admit numai sandbox și distribuție sintetice;
   `ce + production` cere release admission, iar `ee + production` cere
-  suplimentar autorizare Enterprise, toate legate de target fingerprint;
-- catalog/disposition report exact-once și provenance scan versionat, cu
-  `reuse|patch|pmorg_independent`, implementation/patch refs, evidence și
-  ADR/waiver când este cazul.
+  suplimentar autorizare Enterprise, legate de target/destination fingerprint
+  și payloadul efectiv, după operație;
+- payloadul runtime și targetul sunt reconstruite la deploy, startup și
+  watchdog; lipsa revalidării quiesce-uiește workloadul și efectele sale înainte
+  de deadline. Distribuția revalidează payloadul/destinația până la commit și
+  abortă transferul fără bytes parțiali vizibili la mismatch ori expirare;
+- catalog complet peste cerințe, candidate-search/disposition exact-once și
+  provenance scan versionat, cu `reuse|patch|pmorg_independent`, bytes de
+  evidence și ADR/waiver când este cazul.
 
 ### 4.2 Odoo PMORG
 
@@ -225,14 +235,20 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
-- manifestul/attestation-ul detașate leagă întreg artifact set, image lock și
-  toate rapoartele care decid PASS;
-- 2/2 builduri curate au digesturi canonice identice;
+- manifestul și DSSE payload/envelope detașate leagă catalogul/setul exact,
+  image lock, qualification index și toate evidence bytes care decid PASS;
+- 2/2 builduri curate au descriptorii și payload digesturile canonice identice;
+- surface claim-ul release-ului corespunde unui build real calificat; contract
+  fixtures exercită toate cele patru celule, fără a simula disponibilitatea
+  unei variante CE neconstruite;
 - `ce` are zero EE; orice `ee` are inventar complet;
 - truth table-ul celor patru celule trece pentru deployment, startup și
-  distribution; descriptorul/fingerprint-ul țintei este recomputat;
-- capability disposition acoperă exact-once 100% catalogul, iar provenance
-  scan-ul versionat are zero match-uri nerezolvate;
+  distribution; payloadul runtime și targetul sunt recomputate și la watchdog,
+  iar payloadul distribuit și destinația sunt recomputate/revalidate până la
+  commit; expiry produce quiesce/abort fail-closed;
+- capability catalog acoperă setul cerințelor, search/disposition este
+  exact-once, iar provenance scan-ul are coverage exact și zero
+  unreviewed/forbidden/nerezolvate;
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 

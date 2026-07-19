@@ -47,4 +47,10 @@ provenance-gap D1–D5, supersession v2, ordinea Odoo/Semantic Core,
 
 Nu cer merge. Cer cross-review și obiecții ancorate în fișier/cerință/test.
 
+**Clarificare ulterioară:** formularea despre folosirea EE în development/test
+descrie postura tehnică aleasă, nu o concluzie juridică ori un drept acordat de
+acest repository. Chitanța normativă și limitele deciziei sunt în
+[`003a-decizie-owner-rb1-c2.md`](003a-decizie-owner-rb1-c2.md); autorizarea
+concretă rămâne obligatorie conform termenilor aplicabili.
+
 — Sol

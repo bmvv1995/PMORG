@@ -12,7 +12,8 @@ la requirements freeze `RB-1`, cu interpretările din
 corrigendum-ul `RB-1/C1`. ADR-317–318 formează corrigendum-ul `RB-1/C2`,
 rezultat din clarificările ownerului privind profilurile Onyx și caracterul
 implementation-agnostic al orchestratorului, consemnate în
-`docs/correspondence/002*`.
+[decizia ownerului `003a`](../correspondence/003a-decizie-owner-rb1-c2.md);
+`002` rămâne corespondența de implementare și review.
 
 ## ADR-301 — V3 este o nouă generație de implementare
 
@@ -222,15 +223,18 @@ devin stare autoritativă v3.
 
 ## ADR-317 — Suprafața Onyx și modul de utilizare sunt axe independente
 
-**Status:** Accepted prin decizia ownerului (2026-07-19)
+**Status:** Accepted prin
+[decizia ownerului `003a`](../correspondence/003a-decizie-owner-rb1-c2.md)
+(2026-07-19)
 
 **Decizie:** fiecare build fixează `onyx_surface: ce|ee` și
 `usage_mode: development_test|production` într-un
-`BuildQualificationManifest` canonic. Manifestul este o atestare detașată
-peste setul exact de artefacte deployabile; nu este inclus în imaginile ale
-căror digesturi le semnează. Două builduri curate independente trebuie să
-producă același artifact-set hash și același payload de calificare, ignorând
-numai envelope-ul de semnătură și timpul emiterii.
+`BuildQualificationManifest` canonic. Manifestul este legat de o atestare DSSE
+detașată peste setul exact de artefacte
+deployabile; niciunul nu este inclus în imaginile ale căror digesturi le leagă.
+Două builduri curate independente trebuie să producă aceiași descriptori și
+aceleași artifact-set, qualification și report payload hashes, ignorând numai
+attestation/execution envelopes și timpul emiterii.
 
 O capabilitate Onyx existentă se reutilizează implicit dacă trece contractele
 PMORG, izolarea, securitatea și constrângerile comerciale. Un catalog versionat,
@@ -242,20 +246,31 @@ Orice `development_test`, indiferent de suprafață, admite numai o țintă și 
 destinație de distribuție sintetice, măsurate și semnate.
 `ce + production` cere admission de release legat de artefact și ținta client.
 `ee + production` cere suplimentar autorizare Onyx Enterprise verificată.
-Target fingerprint-ul este derivat din descriptorul canonic al bindingurilor de
-date, identități, canale, secrets, workload și network policy, apoi recomputat
-la deploy și startup. Necunoscut, imposibil de măsurat, expirat, revocat,
-build/target mismatch ori verifier neacceptat refuză fail-closed.
+Payloadul runtime și target fingerprint-ul sunt derivate din bytes/API-urile
+trusted și descriptorii canonici ai artefactelor, bindingurilor de date,
+identități, canale, secrets, workload și network policy, apoi reconstruite la
+deploy, startup și fiecare revalidare. Necunoscut, imposibil de măsurat,
+expirat, revocat, build/payload/target mismatch ori verifier neacceptat refuză
+fail-closed; watchdog-ul quiesce-uiește workloadul înaintea deadline-ului și
+blochează efectele până la un admission nou valid.
 Publicarea/exportul trece printr-un distribution admission separat.
+Payloadul efectiv și descriptorul/fingerprint-ul destinației sunt reconstruite
+din bytes și APIs trusted imediat înainte de transfer; declarația apelantului
+nu poate stabili clasa destinației. Transferul activ se revalidează până la
+commit și este abortat fără bytes parțiali vizibili dacă ar traversa deadline-ul.
 
 Patchurile directe asupra Software-ului EE și drepturile aferente rămân sub
 termenii Onyx Enterprise; numai modulele PMORG create independent au ownership
 PMORG separat. Identificatorii comerciali sunt opaci/HMAC, recordurile complete
 sunt sealed, iar bundle-ul public conține numai hash și verdict.
 
-**Consecințe:** calificarea `ce` rămâne selectabilă și verifică absența codului
+**Consecințe:** suprafața `ce` rămâne calificabilă și verifică absența codului
 EE, dar nu este critical path pentru Semantic Core, contracte sau integrarea
-PMORG în Onyx. `G3-A` testează toate cele patru celule, reproducibilitatea,
+PMORG în Onyx. O distribuție CE nu poate fi declarată disponibilă până când un
+build CE real nu trece propriul `G3-A`; MVP-ul cu suprafață EE nu așteaptă acel
+release separat. Suita de contract testează toate cele patru celule cu fixtures
+sintetice, iar fiecare release candidate califică artefactul real al suprafeței
+declarate. `G3-A` verifică reproducibilitatea,
 admission-ul de deploy/startup/distribution, capability disposition și
 proveniența. Un flag, o etichetă, un URI mutabil ori o promisiune viitoare de
 licențiere nu pot autoriza producția.
