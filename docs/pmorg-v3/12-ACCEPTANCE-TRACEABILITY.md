@@ -39,7 +39,7 @@ G3-A–G3-F sunt conjunctive. MVP-ul este `PASS` numai dacă toate sunt
 |---|---|---|
 | `A-FORK-001` | tagul și SHA-ul Onyx și commitul PMORG sunt fixate | 100% prezente în manifest și UI/version endpoint |
 | `A-UPSTREAM-001` | suita upstream selectată trece pe baseline curat și fork | 100% teste obligatorii; excluderile au waiver versionat |
-| `A-LIC-001` | artefactul respectă `onyx_surface × usage_mode` | `ce`: 0 fișiere/imports/layers EE; `ee + development_test`: inventar complet și 100% încercări de production/distribution refuzate; `ee + production`: dovadă validă pentru entitate, seats/scope și acord, iar missing/expired/mismatch este refuzat |
+| `A-LIC-001` | artefactul respectă `onyx_surface × usage_mode` | `ce`: 0 fișiere/imports/layers EE; orice `ee`: inventar complet; `ee + development_test`: 100% încercări de production/distribution refuzate; `ee + production`: dovadă validă pentru entitate, seats/scope și acord, iar missing/expired/mismatch este refuzat |
 | `A-PATCH-001` | modificările upstream sunt inventariate | 100% fișiere modificate apar în patch ledger |
 | `A-PATCH-002` | patchurile directe EE nu sunt revendicate drept PMORG-owned | 100% declară `license_class=onyx-enterprise`; 0 cod EE copiat în module PMORG; orice abatere de la reuse-default are ADR/waiver versionat |
 | `A-MIG-001` | instalarea/migrarea din baze curate este repetabilă | 3/3 porniri curate PASS |
