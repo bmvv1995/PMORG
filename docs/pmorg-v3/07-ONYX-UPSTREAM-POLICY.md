@@ -36,7 +36,7 @@ PMORG-Platform/
 ├── backend/
 │   ├── onyx/                       # upstream-owned; patch minim
 │   └── pmorg/
-│       ├── domain/                 # fără importuri Onyx/Odoo/Hermes
+│       ├── domain/                 # fără importuri Onyx/Odoo/orchestrator concret
 │       ├── application/
 │       ├── semantic_core/
 │       ├── interaction/            # Turn Coordinator
@@ -44,7 +44,7 @@ PMORG-Platform/
 │       ├── integrations/
 │       │   ├── onyx/
 │       │   ├── odoo/
-│       │   ├── hermes/
+│       │   ├── orchestrator/
 │       │   └── gateway/
 │       ├── server/
 │       └── mcp/
@@ -56,7 +56,7 @@ PMORG-Platform/
 │   └── pmorg_anchor_*/
 ├── services/
 │   ├── semantic-core/
-│   ├── hermes-adapter/
+│   ├── orchestrator-adapters/      # Hermes poate fi un adaptor
 │   └── communication-gateway/
 ├── contracts/
 │   ├── context/
@@ -181,22 +181,23 @@ Politica de build declară două axe independente:
    dependency graph și fiecare layer salvat;
 4. orice build cu `onyx_surface: ee` inventariază complet capabilitățile,
    fișierele, dependențele, patchurile și layers EE;
-5. `ee + development_test` adaugă o gardă tehnică ce refuză producția și
-   distribuirea;
-6. `ee + production` adaugă o dovadă verificabilă pentru entitatea autorizată,
-   numărul/scope-ul de seats și acordul aplicabil; lipsa, expirarea sau mismatch-ul
-   refuză pornirea/deploymentul;
-7. o capabilitate Onyx se reutilizează implicit numai dacă trece contractele
+5. orice `usage_mode=development_test`, CE sau EE, admite numai sandbox și
+   registry/destinație sintetice și refuză client deployment/distribution;
+6. `ce + production` cere release/deployment admission legat de setul de
+   artefacte și ținta client;
+7. `ee + production` cere suplimentar autorizare verificabilă pentru entitate,
+   seats/scope și acord;
+8. o capabilitate Onyx se reutilizează implicit numai dacă trece contractele
    PMORG, izolarea, securitatea și constrângerile comerciale; abaterea cere ADR
    sau waiver versionat;
-8. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
+9. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
    termenii Onyx Enterprise;
-9. axele, digestul artefactului, rapoartele de suprafață și capability
-   disposition, SBOM-ul și verifier receipt-ul sunt fixate într-un
-   `BuildQualificationManifest` content-addressed și semnat;
-10. orice deploy cere un `DeploymentAdmissionRecord` semnat de un verifier
-    acceptat și legat de build, target, mod și intervalul de valabilitate;
-11. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
+10. axele și dovezile care decid PASS sunt legate de setul exact de artefacte
+    prin manifest și envelope semnat, detașate de imaginile calificate;
+11. deploy/startup validează descriptor/fingerprint, measurement attestation și
+    `DeploymentAdmissionRecord`; publicarea/exportul validează separat
+    `DistributionAdmissionRecord`;
+12. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
     producții sau distribuții comerciale se face review juridic al buildului
     concret.
 
@@ -209,29 +210,35 @@ controlul de acces Onyx existent, dar îl califică independent.
 
 Un „client deployment” este orice țintă care conține ori poate accesa date,
 identități, canale, credențiale sau endpointuri organizaționale nesintetice.
-`ee + development_test` pornește numai cu o atestare semnată de sandbox care
-dovedește izolarea de aceste resurse și nu poate fi distribuit ori admis pe o
-țintă client. `ee + production` pornește numai cu o autorizare Onyx
-Enterprise verificată. Axele sunt build-time și apar în manifestul semnat;
-startup-ul le compară cu admission record-ul și target fingerprint-ul. Un
-environment variable, o etichetă schimbată manual sau lipsa/mismatch-ul
-recordului nu poate face bypass. Verificarea pozitivă și toate refuzurile sunt
-testate numai pe ținte și credențiale sintetice. ACL-ul Odoo și izolarea PMORG
-rămân obligatorii în toate combinațiile.
+Orice resursă necunoscută ori imposibil de măsurat clasifică ținta fail-closed
+drept client. Descriptorul canonic acoperă workload identity, bindingurile de
+date/identitate/canal/secrets, resource-classification report și network policy;
+fingerprint-ul său se recompută independent la deploy și la fiecare startup.
+
+Ambele suprafețe în `development_test` cer measurement attestation semnată
+pentru sandbox și refuză targetul client. Publicarea/exportul cere admission
+separat și permite numai registry/destinație sintetică controlată.
+`ce + production` cere admission de release; `ee + production` cere
+suplimentar autorizare Onyx Enterprise. Dovezile sunt content-addressed, au
+trust root, timp trusted, valabilitate și revocation status; URI-urile singure
+nu sunt evidence. Câmpurile comerciale sunt opace/HMAC și rămân sealed.
+Verificarea pozitivă și refuzurile folosesc numai fixtures, ținte și
+credențiale sintetice. ACL-ul Odoo și izolarea PMORG rămân obligatorii.
 
 ## 8. Gate-uri pentru fiecare upgrade
 
 ### Fork și build
 
 - build upstream curat înainte de aplicarea modificărilor PMORG;
-- conformitate cu matricea declarată: zero EE pentru `ce`; inventar complet
-  pentru orice suprafață `ee`; admission sintetic semnat pentru
-  `ee + development_test`; autorizare validă, semnată și legată de build/țintă
-  pentru `ee + production`;
-- `BuildQualificationManifest` și `DeploymentAdmissionRecord` validate la
-  deploy și startup, inclusiv negativele missing/expired/mismatch/untrusted;
-- capability-disposition report complet și proveniență PMORG-owned fără cod EE
-  copiat;
+- conformitate exhaustivă cu cele patru celule: zero EE pentru `ce`; inventar
+  complet pentru orice `ee`; target/distribution sintetic pentru ambele
+  `development_test`; release admission pentru `ce + production`;
+  autorizare Enterprise suplimentară pentru `ee + production`;
+- două builduri curate reproduc același artifact-set și qualification payload;
+- build attestation, target measurement, deployment admission și distribution
+  admission validează missing/expired/revoked/mismatch/untrusted;
+- capability-disposition și provenance reports complete, versionate și
+  content-addressed, fără cod EE copiat;
 - toate imaginile și dependențele fixate;
 - nicio modificare upstream neinventariată;
 - testele upstream și PMORG verzi.
