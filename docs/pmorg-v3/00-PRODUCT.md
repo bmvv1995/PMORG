@@ -5,7 +5,7 @@
 | Status | Accepted — requirements baseline `RB-1/C2` |
 | Versiune | `3.0-baseline.3` |
 | Data | 2026-07-19 |
-| Bază de implementare | fork guvernat al Onyx, cu profil de livrare CE sau licensed-EE declarat; tagul și SHA-ul se fixează la bootstrap |
+| Bază de implementare | fork guvernat al Onyx; fiecare build declară `onyx_surface: ce|ee` și `usage_mode: development_test|production`; tagul și SHA-ul se fixează la bootstrap |
 | Ancoră de domeniu | Odoo 19 Community, cu revizia exactă fixată în manifestul fiecărui build |
 
 ## 1. Definiție
@@ -40,9 +40,9 @@ V3 este o nouă generație de implementare a aceluiași produs, nu un produs cu
 altă intenție.
 
 - Onyx devine codebase-ul, workspace-ul cognitiv și baza de UI, chat,
-  knowledge, RAG, agenți și actions. Capabilitățile CE sau EE existente se
-  folosesc conform profilului de livrare declarat; PMORG nu le rescrie numai
-  pentru a evita o dependență EE.
+  knowledge, RAG, agenți și actions. O capabilitate Onyx existentă se
+  reutilizează implicit dacă trece contractele PMORG, izolarea, securitatea și
+  constrângerile comerciale; abaterea cere ADR sau waiver versionat.
 - PMORG Semantic Core devine un bounded context obligatoriu în produs, nu un
   add-on opțional și nici un simplu index Onyx.
 - Odoo rămâne ontologia executabilă, registrul muncii formale și sursa
