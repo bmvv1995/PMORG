@@ -131,14 +131,17 @@ Pentru fiecare fișier upstream modificat se consemnează:
 
 ```text
 path · motiv · owner · upstream issue/PR, dacă există
+license_class · ownership terms pentru patch · suprafață Onyx
 seam folosit · test protector · data ultimei revalidări
 conflict/rebase notes · plan de eliminare, dacă este temporar
 ```
 
 Se contribuie upstream schimbările generice utile — hooks, extension seams,
-bugfixuri — fără a muta semantica PMORG în upstream. Patch budget-ul se
-raportează la fiecare release: număr de fișiere și linii upstream atinse,
-conflicte și timp de integrare.
+bugfixuri — fără a muta semantica PMORG în upstream. Patchurile directe asupra
+codului Onyx EE sunt marcate `license_class=onyx-enterprise` și nu sunt
+revendicate drept cod PMORG independent; modificările și patchurile rămân sub
+termenii Onyx Enterprise. Patch budget-ul se raportează la fiecare release:
+număr de fișiere și linii upstream atinse, conflicte și timp de integrare.
 
 ## 7. Licențiere
 
@@ -154,38 +157,45 @@ Repository-ul Onyx declară:
 Surse oficiale: [licența repository-ului Onyx](https://github.com/onyx-dot-app/onyx/blob/main/LICENSE)
 și [Onyx Enterprise License](https://github.com/onyx-dot-app/onyx/blob/main/backend/ee/LICENSE).
 
-Politica profilurilor de livrare:
+Politica de build declară două axe independente:
 
-1. fiecare build declară exact un profil `ce` sau `licensed-ee`;
-2. profilul `ce` exclude directoarele și importurile EE și este scanat în
-   source tree, dependency graph și imagini;
-3. profilul `licensed-ee` inventariază capabilitățile și fișierele EE folosite,
-   fără a le copia în module PMORG;
-4. o capabilitate Onyx adecvată se reutilizează; nu se rescrie numai pentru a
-   evita EE;
-5. notice-ul Onyx și licențele third-party sunt păstrate, iar brandul
-   produsului este PMORG cu atribuirea cerută;
-6. activarea EE într-un deployment client cere licență/autorizare comercială
-   înainte de livrare;
-7. înaintea primei distribuții comerciale se face review juridic al buildului
-   concret, nu numai al intenției arhitecturale.
+1. `onyx_surface: ce|ee`;
+2. `usage_mode: development_test|production`;
+3. `ce` exclude directoarele/importurile EE și este scanat în source tree,
+   dependency graph și fiecare layer salvat;
+4. `ee + development_test` inventariază capabilitățile, fișierele,
+   dependențele, patchurile și layers EE și activează o gardă care refuză
+   producția și distribuirea;
+5. `ee + production` cere o dovadă verificabilă pentru entitatea autorizată,
+   numărul/scope-ul de seats și acordul aplicabil; lipsa, expirarea sau mismatch-ul
+   refuză pornirea/deploymentul;
+6. o capabilitate Onyx se reutilizează implicit numai dacă trece contractele
+   PMORG, izolarea, securitatea și constrângerile comerciale; abaterea cere ADR
+   sau waiver versionat;
+7. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
+   termenii Onyx Enterprise;
+8. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
+   producții sau distribuții comerciale se face review juridic al buildului
+   concret.
 
 Un risc important: documentația Onyx indică faptul că RBAC-ul pentru agenți,
 actions și documente și accesul diferențiat la documente sunt funcții
 Enterprise. Vezi [Onyx Access Controls](https://docs.onyx.app/security/architecture/access_controls).
-Prin urmare, profilul `ce` folosește corpus sintetic cu acces uniform până
-când permission-aware retrieval este calificat. Profilul `licensed-ee` poate
-folosi controlul de acces Onyx existent, dar trebuie să-l califice independent
-și să închidă poarta comercială înainte de deployment client. ACL-ul Odoo și
-izolarea PMORG rămân obligatorii în ambele profiluri.
+Prin urmare, `ce` folosește corpus sintetic cu acces uniform până când
+permission-aware retrieval este calificat. Suprafața `ee` poate folosi
+controlul de acces Onyx existent, dar îl califică independent. În
+`development_test` nu poate porni ori distribui un deployment de producție;
+în `production` autorizarea este condiție tehnică fail-closed. ACL-ul Odoo și
+izolarea PMORG rămân obligatorii în toate combinațiile.
 
 ## 8. Gate-uri pentru fiecare upgrade
 
 ### Fork și build
 
 - build upstream curat înainte de aplicarea modificărilor PMORG;
-- conformitate cu profilul declarat: zero cod EE pentru `ce`; inventar complet
-  și autorizare de deployment pentru `licensed-ee`;
+- conformitate cu matricea declarată: zero EE pentru `ce`; inventar plus
+  production guard pentru `ee + development_test`; autorizare validă pentru
+  `ee + production`;
 - toate imaginile și dependențele fixate;
 - nicio modificare upstream neinventariată;
 - testele upstream și PMORG verzi.
