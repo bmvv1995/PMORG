@@ -3,7 +3,7 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted |
-| Baseline | `RB-1/C1` |
+| Baseline | `RB-1/C2` |
 | Contract version | `1.0` |
 | Data | 2026-07-18 |
 
@@ -30,7 +30,7 @@ draft → clarifying → planned → awaiting_confirmation → active
 ```
 
 `cancelled` este terminal și poate fi atins din orice stare ne-terminală
-numai prin decizie autorizată. `closed` este terminal în `RB-1/C1`; o nevoie nouă
+numai prin decizie autorizată. `closed` este terminal în `RB-1/C2` (regulă introdusă în `C1`); o nevoie nouă
 produce o inițiativă legată prin `followup_of`, nu rescrierea celei închise.
 
 ### 2.2 Tranziții
