@@ -143,6 +143,22 @@ revendicate drept cod PMORG independent; modificările și patchurile rămân su
 termenii Onyx Enterprise. Patch budget-ul se raportează la fiecare release:
 număr de fișiere și linii upstream atinse, conflicte și timp de integrare.
 
+### Capability disposition
+
+Un catalog versionat enumeră fiecare capabilitate necesară produsului și
+cerințele PMORG pe care le deservește. Pentru fiecare element, release-ul emite
+exact un record cu: candidații Onyx și referințele lor de cod, verdictul de
+calificare, decizia `reuse|patch|pmorg_independent`, clasa de licență,
+testele/evidence și ADR-ul sau waiver-ul necesar când o capabilitate Onyx
+calificată nu este reutilizată. Lipsa unui element ori o decizie nedeclarată
+invalidează `G3-A`.
+
+Raportul include și proveniența tuturor căilor PMORG-owned. Scanul compară
+hash-uri și fingerprints normalizate cu arborii EE fixați; o potrivire exactă
+sau similaritate peste prag intră în review de proveniență și blochează
+calificarea până la rezolvare. Acest control nu revendică ownership asupra
+patchurilor EE.
+
 ## 7. Licențiere
 
 Repository-ul Onyx declară:
@@ -175,19 +191,33 @@ Politica de build declară două axe independente:
    sau waiver versionat;
 8. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
    termenii Onyx Enterprise;
-9. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
-   producții sau distribuții comerciale se face review juridic al buildului
-   concret.
+9. axele, digestul artefactului, rapoartele de suprafață și capability
+   disposition, SBOM-ul și verifier receipt-ul sunt fixate într-un
+   `BuildQualificationManifest` content-addressed și semnat;
+10. orice deploy cere un `DeploymentAdmissionRecord` semnat de un verifier
+    acceptat și legat de build, target, mod și intervalul de valabilitate;
+11. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
+    producții sau distribuții comerciale se face review juridic al buildului
+    concret.
 
 Un risc important: documentația Onyx indică faptul că RBAC-ul pentru agenți,
 actions și documente și accesul diferențiat la documente sunt funcții
 Enterprise. Vezi [Onyx Access Controls](https://docs.onyx.app/security/architecture/access_controls).
 Prin urmare, `ce` folosește corpus sintetic cu acces uniform până când
 permission-aware retrieval este calificat. Suprafața `ee` poate folosi
-controlul de acces Onyx existent, dar îl califică independent. În
-`development_test` nu poate porni ori distribui un deployment de producție;
-în `production` autorizarea este condiție tehnică fail-closed. ACL-ul Odoo și
-izolarea PMORG rămân obligatorii în toate combinațiile.
+controlul de acces Onyx existent, dar îl califică independent.
+
+Un „client deployment” este orice țintă care conține ori poate accesa date,
+identități, canale, credențiale sau endpointuri organizaționale nesintetice.
+`ee + development_test` pornește numai cu o atestare semnată de sandbox care
+dovedește izolarea de aceste resurse și nu poate fi distribuit ori admis pe o
+țintă client. `ee + production` pornește numai cu o autorizare Onyx
+Enterprise verificată. Axele sunt build-time și apar în manifestul semnat;
+startup-ul le compară cu admission record-ul și target fingerprint-ul. Un
+environment variable, o etichetă schimbată manual sau lipsa/mismatch-ul
+recordului nu poate face bypass. Verificarea pozitivă și toate refuzurile sunt
+testate numai pe ținte și credențiale sintetice. ACL-ul Odoo și izolarea PMORG
+rămân obligatorii în toate combinațiile.
 
 ## 8. Gate-uri pentru fiecare upgrade
 
@@ -195,8 +225,13 @@ izolarea PMORG rămân obligatorii în toate combinațiile.
 
 - build upstream curat înainte de aplicarea modificărilor PMORG;
 - conformitate cu matricea declarată: zero EE pentru `ce`; inventar complet
-  pentru orice suprafață `ee`; production guard pentru `ee + development_test`;
-  autorizare validă pentru `ee + production`;
+  pentru orice suprafață `ee`; admission sintetic semnat pentru
+  `ee + development_test`; autorizare validă, semnată și legată de build/țintă
+  pentru `ee + production`;
+- `BuildQualificationManifest` și `DeploymentAdmissionRecord` validate la
+  deploy și startup, inclusiv negativele missing/expired/mismatch/untrusted;
+- capability-disposition report complet și proveniență PMORG-owned fără cod EE
+  copiat;
 - toate imaginile și dependențele fixate;
 - nicio modificare upstream neinventariată;
 - testele upstream și PMORG verzi.
