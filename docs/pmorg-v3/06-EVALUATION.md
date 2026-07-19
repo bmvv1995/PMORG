@@ -2,9 +2,9 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 | Lege | zero teste în producție |
 
 ## 1. Ce trebuie demonstrat
@@ -27,7 +27,7 @@ flowchart LR
       P["Onyx-PMORG"]
       S["Semantic Core"]
       O["Odoo"]
-      R["Runner / Hermes adapter"]
+      R["Runner / orchestrator adapter"]
       C["Simulated channel"]
     end
 
@@ -167,7 +167,7 @@ unei funcții de siguranță.
 - registry/fingerprint mismatch;
 - identity binding absent ori ambiguu;
 - mesaj privacy/secret-denied: zero transcript, evidence, content ref/hash,
-  index, prompt ori checkpoint/log/input Hermes/runner; mesajul nu ajunge la
+  index, prompt ori checkpoint/log/input orchestrator/runner; mesajul nu ajunge la
   runtime; numai receipt metadata-only;
 - absența oricărui endpoint/action de review pentru interpretarea claim-ului;
 - auto-validare și validator neautorizat;
