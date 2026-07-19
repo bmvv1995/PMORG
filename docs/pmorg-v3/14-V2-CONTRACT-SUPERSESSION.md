@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — corrigendum `RB-1/C1` |
+| Status | Accepted — introdus în `RB-1/C1`, păstrat în `RB-1/C2` |
 | Contract succesor | `pmorg-contracts/1.0` |
 | Contracte superseded pentru v3 | orchestrator/Odoo v2 `1.0/1.1`; `pmorg-memory/1.0` |
 | Referință | [PMORG-Platform#16](https://github.com/bmvv1995/PMORG-Platform/issues/16); [decizia ownerului 001a](../correspondence/001a-decizie-owner.md) |
@@ -14,7 +14,7 @@
 pentru SB3 și pentru reproducerea rezultatelor v2. Ele sunt însă
 **superseded pentru orice implementare v3** de
 [`pmorg-contracts/1.0`](09-CONTRACTS.md), state machines v3 și cerințele
-`RB-1/C1`.
+`RB-1/C2` (maparea a fost introdusă în `RB-1/C1`).
 
 Supersession-ul este incompatibil la wire level. Un client v2 nu apelează
 direct un server v3 și un server v3 nu publică aliasuri v2 în API-ul său
