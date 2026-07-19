@@ -74,15 +74,15 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
-- `onyx_surface` și `usage_mode` fixate într-un
-  `BuildQualificationManifest` semnat; `ce` conține zero cod Enterprise,
-  orice suprafață `ee` are inventar complet, iar fiecare deploy cere un
-  `DeploymentAdmissionRecord` legat de build și țintă;
-- `ee + development_test` admite numai sandbox sintetic atestat și blochează
-  tehnic producția/distribuirea; `ee + production` cere autorizare verificată
-  pentru entitate, seats/scope, acord și valabilitate;
-- catalog versionat al capabilităților necesare și disposition report complet,
-  cu `reuse|patch|pmorg_independent`, evidence și ADR/waiver când este cazul.
+- `onyx_surface` și `usage_mode` fixate într-un manifest/attestation
+  detașate și semnate peste întregul artifact set și qualification bundle;
+- două builduri curate reproduc același artifact-set și qualification payload;
+- ambele `development_test` admit numai sandbox și distribuție sintetice;
+  `ce + production` cere release admission, iar `ee + production` cere
+  suplimentar autorizare Enterprise, toate legate de target fingerprint;
+- catalog/disposition report exact-once și provenance scan versionat, cu
+  `reuse|patch|pmorg_independent`, implementation/patch refs, evidence și
+  ADR/waiver când este cazul.
 
 ### 4.2 Odoo PMORG
 
@@ -225,14 +225,14 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
-- `BuildQualificationManifest` fixează digestul, `onyx_surface`,
-  `usage_mode`, SBOM-ul, inventarul EE condițional și verifier receipt-ul;
-- `ce` are zero cod Enterprise; orice suprafață `ee` are inventar complet;
-- `DeploymentAdmissionRecord` refuză un `ee + development_test` pe țintă
-  client și refuză `ee + production` fără autorizare validă, semnată și legată
-  de build/țintă;
-- capability-disposition report-ul acoperă 100% catalogul necesar și justifică
-  fiecare abatere de la reuse-default;
+- manifestul/attestation-ul detașate leagă întreg artifact set, image lock și
+  toate rapoartele care decid PASS;
+- 2/2 builduri curate au digesturi canonice identice;
+- `ce` are zero EE; orice `ee` are inventar complet;
+- truth table-ul celor patru celule trece pentru deployment, startup și
+  distribution; descriptorul/fingerprint-ul țintei este recomputat;
+- capability disposition acoperă exact-once 100% catalogul, iar provenance
+  scan-ul versionat are zero match-uri nerezolvate;
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 
