@@ -32,8 +32,8 @@ class TestOrchestratorApi(TransactionCase):
             }
         )
 
-    def _payload(self, params=None, actor="runner-1", key=None, now=NOW):
-        return {
+    def _payload(self, params=None, actor="runner-1", key=None, now=NOW, company_id=None):
+        payload = {
             "schema_version": "1.0",
             "message_id": str(uuid.uuid4()),
             "correlation_id": "corr-1",
@@ -43,6 +43,9 @@ class TestOrchestratorApi(TransactionCase):
             "occurred_at": now,
             "params": params or {},
         }
+        if company_id is not None:
+            payload["company_id"] = company_id
+        return payload
 
     def _call(self, command, params=None, **kw):
         return self.api.api_call(command, self._payload(params, **kw))
@@ -125,6 +128,128 @@ class TestOrchestratorApi(TransactionCase):
             self.env["pmorg.task.run"].search_count(
                 [("task_id", "=", self.task.id)]
             ),
+            1,
+        )
+
+    def test_idempotency_conflict_same_key_different_payload(self):
+        # 14-V2-CONTRACT-SUPERSESSION §4 testele 2/6: aceeași cheie + payload
+        # diferit => conflict, zero efect nou, niciodată replay tăcut.
+        self._call("mark_managed", {"task_id": self.task.id})
+        key = "conflict-idem-1"
+        first = self._call("claim_task", {"task_id": self.task.id}, key=key)
+        self.assertEqual(first["status"], "ok", first)
+        other = self.env["project.task"].create(
+            {
+                "name": "Task API 2",
+                "project_id": self.project.id,
+                "pmorg_initiative_id": self.initiative.id,
+                "pmorg_task_type": "clarification",
+                "execution_mode": "agent",
+            }
+        )
+        resp = self._call("claim_task", {"task_id": other.id}, key=key)
+        self.assertEqual(resp["status"], "error")
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+        self.assertEqual(
+            self.env["pmorg.task.run"].search_count(
+                [("task_id", "=", other.id)]
+            ),
+            0,
+        )
+        self.assertEqual(
+            self.env["pmorg.command.inbox"].search_count(
+                [("idempotency_key", "=", key)]
+            ),
+            1,
+        )
+
+    def test_idempotency_conflict_across_commands(self):
+        # Aceeași cheie, comandă diferită: tot conflict — identitatea cererii
+        # include comanda, nu doar params.
+        key = "conflict-idem-2"
+        first = self._call("mark_managed", {"task_id": self.task.id}, key=key)
+        self.assertEqual(first["status"], "ok", first)
+        resp = self._call("claim_task", {"task_id": self.task.id}, key=key)
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+
+    def test_idempotency_legacy_row_never_replays(self):
+        # Testul de migrare (14 §4 testul 3): rând legacy fără request_hash
+        # nu e autoritativ — reutilizarea cheii lui NU rejoacă tăcut.
+        key = "legacy-idem-1"
+        self.env["pmorg.command.inbox"].create(
+            {
+                "actor_id": "runner-1",
+                "idempotency_key": key,
+                "command": "mark_managed",
+                "response": {"status": "ok", "result": {}},
+            }
+        )
+        resp = self._call("mark_managed", {"task_id": self.task.id}, key=key)
+        self.assertEqual(resp["status"], "error")
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+        self.assertEqual(self.task.orchestration_state, "not_managed")
+
+    def test_idempotency_keys_scoped_per_actor(self):
+        # 14 §4 testul 4: cheile nu se dedublează între actori.
+        key = "scoped-idem-1"
+        first = self._call(
+            "mark_managed", {"task_id": self.task.id}, actor="runner-1", key=key
+        )
+        self.assertEqual(first["status"], "ok", first)
+        resp = self._call(
+            "claim_task", {"task_id": self.task.id}, actor="runner-2", key=key
+        )
+        self.assertNotEqual(
+            resp.get("error", {}).get("code"), "E_IDEMPOTENCY_CONFLICT", resp
+        )
+        self.assertEqual(resp["status"], "ok", resp)
+
+    def test_idempotency_conflict_cross_company(self):
+        # Review Sol a3c3715 [P1]: company_id e în anvelopă, nu în params.
+        # Aceeași cheie+actor+comandă+params cu alt company_id NU rejoacă
+        # succesul anterior (nici lease token) — proiecția include company_id.
+        self._call("mark_managed", {"task_id": self.task.id})
+        key = "cross-company-idem"
+        company = self.task.company_id.id
+        first = self._call(
+            "claim_task", {"task_id": self.task.id}, key=key, company_id=company
+        )
+        self.assertEqual(first["status"], "ok", first)
+        resp = self._call(
+            "claim_task", {"task_id": self.task.id}, key=key, company_id=company + 1
+        )
+        self.assertEqual(resp["status"], "error")
+        self.assertEqual(resp["error"]["code"], "E_IDEMPOTENCY_CONFLICT")
+        # Niciun replay: lease-ul companiei A nu se scurge către cererea B.
+        self.assertIsNone(resp.get("result"))
+        self.assertEqual(
+            self.env["pmorg.task.run"].search_count([("task_id", "=", self.task.id)]),
+            1,
+        )
+
+    def test_params_must_be_object(self):
+        # Review Sol a3c3715 [P1]: params non-dict e refuzat strict, nu
+        # colapsat la {} (null/[]/false/0 nu mai confluează payloaduri).
+        payload = self._payload({"task_id": self.task.id})
+        payload["params"] = [1, 2, 3]
+        resp = self.api.api_call("mark_managed", payload)
+        self.assertEqual(resp["status"], "error")
+        self.assertEqual(resp["error"]["code"], "E_SCHEMA")
+
+    def test_idempotency_nested_key_order_stable(self):
+        # Canonicalizarea (sort_keys) e stabilă la reordonarea cheilor nested:
+        # aceeași cerere logică => replay, nu conflict.
+        self._call("mark_managed", {"task_id": self.task.id})
+        key = "nested-order-idem"
+        p1 = {"task_id": self.task.id, "meta": {"x": 1, "y": 2}}
+        p2 = {"task_id": self.task.id, "meta": {"y": 2, "x": 1}}
+        first = self._call("claim_task", p1, key=key)
+        self.assertEqual(first["status"], "ok", first)
+        again = self._call("claim_task", p2, key=key)
+        self.assertEqual(again["status"], "replay", again)
+        self.assertEqual(again["result"]["run_id"], first["result"]["run_id"])
+        self.assertEqual(
+            self.env["pmorg.task.run"].search_count([("task_id", "=", self.task.id)]),
             1,
         )
 

@@ -1,6 +1,6 @@
 {
     "name": "PMORG Core",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "summary": "Operator organizațional persistent — nucleu",
     "description": "PMORG Core — aplicația PMORG transformă Odoo într-un operator organizațional persistent. Nucleu agnostic de domeniu (ADR-013): fără dependențe de HR, Inventory sau Time Off.",
     "author": "PMORG",

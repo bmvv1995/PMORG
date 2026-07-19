@@ -95,6 +95,9 @@ class PmorgCommandInbox(models.Model):
     actor_id = fields.Char(required=True, index=True)
     idempotency_key = fields.Char(required=True)
     command = fields.Char(required=True)
+    # Nul doar pe rânduri legacy (pre-hash): acelea nu mai sunt autoritative
+    # pentru replay — orice reutilizare a cheii lor întoarce conflict.
+    request_hash = fields.Char()
     response = fields.Json()
 
     _actor_key_unique = models.Constraint(

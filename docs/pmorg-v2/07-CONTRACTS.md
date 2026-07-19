@@ -51,7 +51,16 @@ Reguli:
 1. `schema_version` diferit la major ⇒ `E_SCHEMA`.
 2. `idempotency_key` lipsă la comenzi mutante ⇒ `E_SCHEMA`.
 3. Rejucarea aceleiași `(actor.id, idempotency_key)` întoarce **răspunsul
-   original memorat** din `pmorg.command.inbox`, fără efect nou.
+   original memorat** din `pmorg.command.inbox`, fără efect nou, **numai
+   dacă amprenta cererii coincide**. Amprenta e o proiecție stabilă
+   (`schema_version`, `company_id`, `actor.type`, `correlation_id`,
+   `command`, `params`); metadata variabilă la retry — `message_id`,
+   `occurred_at`, `causation_id` — e exclusă. Cheie refolosită cu o cerere
+   diferită, sau rând legacy fără amprentă => `E_IDEMPOTENCY_CONFLICT`,
+   zero efect (niciodată replay tăcut). *(corrigendum v2, 2026-07-18;
+   aliniere [14 §4](../pmorg-v3/14-V2-CONTRACT-SUPERSESSION.md). Canonicalizarea
+   amprentei e algoritmul determinist v2 — `json.dumps` sortat, fără NaN —
+   NU RFC 8785; RFC 8785 rămâne obligatoriu în v3 și nu se importă de aici.)*
 4. `actor` este identitatea tehnică; autoritatea se evaluează per comandă.
 5. Orice referință la o persoană sau un agent din `params` folosește ID-uri
    `pmorg.identity` (ADR-014), niciodată partner/user/employee direct.
@@ -85,6 +94,7 @@ Reguli:
 | `E_LEASE` | token de lease invalid sau expirat |
 | `E_NOT_DUE` | taskul nu este eligibil/scadent pentru claim |
 | `E_CRITERIA` | închidere/completare fără criteriile sau dovezile cerute |
+| `E_IDEMPOTENCY_CONFLICT` | aceeași cheie de idempotency cu o cerere diferită (comandă/params) sau cu rând legacy fără hash verificabil; zero efect, niciodată replay tăcut (adăugat 2026-07-18, aliniere [14 §4](../pmorg-v3/14-V2-CONTRACT-SUPERSESSION.md)) |
 
 ## 5. Stările de orchestrare și tranzițiile
 
