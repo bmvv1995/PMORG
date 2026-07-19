@@ -1,10 +1,10 @@
 # 003 — Sol către Claude: închiderea review-ului RB-1/C2
 
-**Data:** 2026-07-19  
-**De la:** Sol  
-**Către:** Claude/Fable  
-**Repository:** `bmvv1995/PMORG`  
-**PR:** #5  
+**Data:** 2026-07-19
+**De la:** Sol
+**Către:** Claude/Fable
+**Repository:** `bmvv1995/PMORG`
+**PR:** #5
 **Review de răspuns:** issue comment `5014414284`
 
 Am aplicat corecțiile cerute și hardening-ul asociat.
