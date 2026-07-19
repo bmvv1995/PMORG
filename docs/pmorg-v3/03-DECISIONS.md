@@ -2,7 +2,7 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | ADR-301–318 Accepted |
+| Status | ADR-301–305, 307–312 și 314–318 Accepted; ADR-306/313 Superseded |
 | Versiune | `3.0-baseline.3` |
 | Data | 2026-07-19 |
 
@@ -219,23 +219,30 @@ de test legacy este izolat; rândurile inbox fără request hash verificabil nu
 devin stare autoritativă v3.
 
 
-## ADR-317 — CE și licensed-EE sunt profiluri de livrare, nu produse diferite
+## ADR-317 — Suprafața Onyx și modul de utilizare sunt axe independente
 
 **Status:** Accepted prin decizia ownerului (2026-07-19)
 
-**Decizie:** PMORG folosește capabilitățile Onyx existente care răspund
-cerinței, indiferent dacă provin din suprafața CE sau EE, fără să le rescrie
-numai pentru a evita EE. Fiecare build declară profilul `ce` sau
-`licensed-ee`, inventariază proveniența și păstrează codul PMORG separat.
-Codul EE nu se copiază în module PMORG. Un deployment client care activează EE
-necesită autorizarea comercială/licența aferentă înainte de livrare; această
-poartă nu blochează proiectarea și testarea pe date sintetice.
+**Decizie:** fiecare build declară `onyx_surface: ce|ee` și
+`usage_mode: development_test|production`. O capabilitate Onyx existentă se
+reutilizează implicit dacă trece contractele PMORG, izolarea, securitatea și
+constrângerile comerciale; abaterea cere ADR sau waiver versionat. Codul EE nu
+se copiază în module PMORG.
 
-**Consecințe:** calificarea CE rămâne un profil suportat și verifică absența
-codului EE, dar nu mai este critical path pentru Semantic Core, contracte sau
-integrarea PMORG în Onyx. Un profil `licensed-ee` reutilizează funcțiile Onyx
-necesare și le tratează ca dependențe de produs, nu ca funcții PMORG de
-reimplementat. Gate A se evaluează în raport cu profilul declarat.
+Suprafața `ee` poate fi copiată și modificată pentru dezvoltare și testare în
+limitele licenței Onyx Enterprise, fără a declara fals o licență de producție.
+Orice utilizare, distribuire ori exploatare `ee + production` este refuzată
+fail-closed fără o dovadă validă care leagă entitatea autorizată, numărul/scope-ul
+de seats și acordul aplicabil. Patchurile directe asupra Software-ului EE și
+drepturile aferente rămân sub termenii Onyx Enterprise; numai modulele PMORG
+create independent au ownership PMORG separat.
+
+**Consecințe:** calificarea `ce` rămâne o variantă selectabilă și verifică
+absența codului EE, dar nu este critical path pentru Semantic Core, contracte
+sau integrarea PMORG în Onyx. `ee + development_test` cere proveniență
+completă și o gardă tehnică împotriva producției/distribuirii. Gate A testează
+matricea suprafață × mod, iar `ee + production` nu poate trece pe baza unei
+promisiuni viitoare de licențiere.
 
 ## ADR-318 — Contractul orchestratorului este implementation-agnostic
 
