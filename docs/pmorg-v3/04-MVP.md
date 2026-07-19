@@ -2,10 +2,10 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
-| Orchestrare | runner determinist pe contractul final; fără Hermes în MVP |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
+| Orchestrare | runner determinist pe contractul final; fără orchestrator extern în MVP |
 | Comunicare | canal simulat pe contractul final |
 | Date | exclusiv sintetice, în sandbox separat de producție |
 
@@ -18,7 +18,7 @@
 > determinist?
 
 MVP-ul validează arhitectura produsului și longitudinalitatea structurală. Nu
-validează încă Hermes, un canal real, cererea comercială, comportamentul unui
+validează încă un orchestrator extern, un canal real, cererea comercială, comportamentul unui
 model pe distribuția reală ori operarea în producție.
 
 ## 2. Principiul de construcție
@@ -74,7 +74,8 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
-- zero cod Enterprise în artefactul CE al MVP-ului.
+- profil de livrare declarat; profilul `ce` conține zero cod Enterprise, iar
+  profilul `licensed-ee` inventariază funcțiile EE folosite și condiția de licențiere.
 
 ### 4.2 Odoo PMORG
 
@@ -107,7 +108,7 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 
 ### 4.4 Runner și canal simulat
 
-- consumă aceleași contracte ca Hermes și gateway-ul viitor;
+- consumă aceleași contracte ca orchestratorul și gateway-ul viitor;
 - listează și revendică atomic munca scadentă;
 - avansează numai prin `tick_id` emis de ceasul trusted;
 - livrează și primește mesaje cu identitate structurală;
@@ -117,7 +118,7 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 
 ## 5. Ce nu intră în MVP
 
-- adaptorul Hermes;
+- adaptorul unui orchestrator extern (Hermes rămâne candidat);
 - Telegram, Teams, Slack, email sau alt canal real;
 - date ori utilizatori reali;
 - LLM personas;
@@ -217,7 +218,8 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
-- artefactul CE nu conține cod Enterprise;
+- artefactul respectă profilul declarat: `ce` fără cod Enterprise sau
+  `licensed-ee` cu dependențe EE inventariate și poartă comercială înainte de deployment;
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 
@@ -242,7 +244,7 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 ### G3-D — vertical slice M0
 
-Scenariul complet trece în `ORG-DIST`, fără LLM, Hermes sau canal real, iar
+Scenariul complet trece în `ORG-DIST`, fără LLM, orchestrator extern sau canal real, iar
 auditul leagă inițiativa de rezultat.
 
 ### G3-E — agnosticism organizațional
@@ -272,10 +274,11 @@ După MVP:
 
 Outputul modelului nu poate ocoli G3-B/G3-C.
 
-### G3-H — Hermes
+### G3-H — orchestrator extern (Hermes candidat)
 
-- G3-H1: adaptorul Hermes înlocuiește runnerul cu un agent determinist;
-- G3-H2: Hermes rulează operatorul înghețat la G3-G fără schimbarea Odoo,
+- G3-H1: adaptorul selectat înlocuiește runnerul cu un agent determinist;
+- G3-H2: orchestratorul selectat rulează operatorul înghețat la G3-G fără
+  schimbarea Odoo,
   Semantic Core, scenariilor sau scorerului.
 
 ### G3-I — canal real în test
