@@ -2,15 +2,16 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 | Natură | arhitectură țintă, nu descrierea implementării curente |
 
 ## 1. Decizia centrală
 
 PMORG v3 este o platformă Odoo-first construită printr-un fork guvernat al
-Onyx Community Edition.
+Onyx. Fiecare build declară un profil de livrare `ce` sau `licensed-ee`;
+profilul schimbă proveniența și condițiile comerciale, nu ownership-ul PMORG.
 
 - **Odoo** este ontologia executabilă, registrul muncii formale și control
   plane-ul efectelor organizaționale.
@@ -18,14 +19,14 @@ Onyx Community Edition.
   include capabilitățile Onyx și Semantic Core.
 - **PMORG Semantic Core** este ledgerul organizațional pentru evidență,
   claims, validări, contradicții, supersession și istorie temporală.
-- **Hermes** este orchestratorul persistent vizat pentru procese de zile sau
-  luni; el nu deține canonic inițiativele ori taskurile.
+- **Orchestratorul persistent** conduce procese de zile sau luni fără să
+  dețină canonic inițiativele ori taskurile; Hermes rămâne adaptor candidat.
 - **Communication Gateway** verifică identități de canal, normalizează
   mesaje și gestionează livrarea.
 
-Onyx și Hermes nu au același rol. Onyx-PMORG execută un pas cognitiv bounded;
-Hermes decide când acel pas trebuie executat, îl reia, îl corelează și
-continuă procesul longitudinal.
+Onyx și orchestratorul nu au același rol. Onyx-PMORG execută un pas cognitiv
+bounded; orchestratorul decide când acel pas trebuie executat, îl reia, îl
+corelează și continuă procesul longitudinal.
 
 ## 2. Topologia produsului
 
@@ -36,7 +37,7 @@ flowchart LR
     CH["Canale externe"]
     G["Communication Gateway"]
     A["PMORG Turn Admission<br/>identity + privacy + evidence admission"]
-    H["Hermes<br/>orchestrator persistent"]
+    H["Orchestrator persistent<br/>Hermes opțional"]
     P["PMORG Platform<br/>cognitive runtime + knowledge"]
     S["PMORG Semantic Core<br/>ledger + validation"]
     O["Odoo + PMORG addons<br/>ontology + formal state"]
@@ -58,7 +59,7 @@ flowchart LR
     S <-->|"anchor validation + registry"| O
 ```
 
-În MVP, runnerul determinist înlocuiește Hermes, iar canalul simulat
+În MVP, runnerul determinist implementează contractul orchestratorului, iar canalul simulat
 înlocuiește gateway-ul real. PMORG Platform, Odoo și Semantic Core sunt
 implementări reale, cu contractele finale.
 
@@ -75,7 +76,7 @@ implementări reale, cu contractele finale.
 | contradicții, supersession și valid time | Semantic Core | nu se reduc la taguri ori text |
 | documente, chunks, embeddings și retrieval | Onyx knowledge/index | proiecție reconstruibilă |
 | conversație și execuție cognitivă bounded | PMORG Platform | nu este starea longitudinală canonică |
-| workflow, scheduling, retries și tool traces | Hermes | stare operațională de runtime, reconciliabilă |
+| workflow, scheduling, retries și tool traces | orchestrator persistent | stare operațională de runtime, reconciliabilă |
 | mesaj extern, delivery și sender verificat | Communication Gateway | transport, nu sens organizațional |
 | oracle, personas, expected outputs și scorer | harness de evaluare | inaccesibile produsului |
 
@@ -83,7 +84,7 @@ Regula de consistență este:
 
 > Odoo spune **ce este formal adevărat acum**; Semantic Core spune **ce s-a
 > observat, de ce credem ceva și cum s-a schimbat**; PMORG Platform decide
-> **ce pas cognitiv propune**; Hermes decide **când și cum continuă procesul**.
+> **ce pas cognitiv propune**; orchestratorul decide **când și cum continuă procesul**.
 
 ## 4. Structura internă a fork-ului
 
@@ -106,7 +107,7 @@ PMORG Platform
 │   ├── live reads
 │   └── authorized business commands
 ├── Orchestration Contract
-│   └── runner determinist / adaptor Hermes
+│   └── runner determinist / adaptor orchestrator (Hermes opțional)
 └── Communication Contract
     └── simulated gateway / adaptoare reale
 ```
@@ -191,7 +192,7 @@ ancoră validă.
 
 ## 8. Contractul cognitiv
 
-Hermes sau runnerul nu trimit prompturi libere într-o sesiune perpetuă. Ele
+Orchestratorul sau runnerul nu trimit prompturi libere într-o sesiune perpetuă. Ele
 apelează un contract bounded:
 
 ```text
@@ -250,7 +251,7 @@ complete_run(...)
 
 Fiecare mutație verifică actorul, compania, autonomia, tranziția, versiunea,
 lease-ul și cheia de idempotency. Nu există ORM sau SQL generic pentru model,
-Onyx ori Hermes.
+Onyx ori orchestrator.
 
 Odoo folosește outbox tranzacțional și command inbox. Livrarea între sisteme
 este at-least-once; consistența rezultă din idempotency, receipts,
@@ -259,7 +260,7 @@ reconciliere și compensări, nu dintr-o tranzacție distribuită imaginară.
 ## 10. Contractul Semantic Core și MCP
 
 Codul PMORG din fork apelează un API de domeniu intern. Aceeași semantică este
-expusă extern prin MCP standard pentru Hermes și alte integrări:
+expusă extern prin MCP standard pentru orchestrator și alte integrări:
 
 ```text
 negotiate_registry
@@ -293,7 +294,7 @@ Pentru inbound, `MessageEnvelope` este strict pre-admission și tranzitoriu.
 Gateway-ul sau UI-ul invocă mai întâi intrarea `admit_message` a PMORG Turn
 API. Ea face identity binding, privacy/secrets gate și, numai după acceptare,
 captura durabilă de evidence. Abia apoi emite un `AdmittedMessage` fără
-payload, `content_ref` sau `content_hash`. Pentru canal extern, Hermes/runnerul
+payload, `content_ref` sau `content_hash`. Pentru canal extern, orchestratorul/runnerul
 primește numai acest receipt admis și continuă Turn API; pentru UI, același
 receipt intră direct în pasul interactiv bounded. Gateway-ul nu pornește un al
 doilea flux cognitiv paralel.
@@ -303,9 +304,9 @@ ambiguu, mesajul intră în reconciliere și nu produce efect organizațional.
 
 După identity binding și înaintea oricărei persistențe PMORG, conținutul trece
 printr-o poartă deterministă de intimitate și secrete. Bufferul raw poate
-exista numai volatil în adaptor/Turn Admission: Hermes nu îl poate primi,
+exista numai volatil în adaptor/Turn Admission: orchestratorul nu îl poate primi,
 checkpoint-a, loga sau programa, iar Onyx nu îl poate transforma în transcript
-ori prompt înaintea verdictului. La refuz, mesajul nu ajunge la Hermes,
+ori prompt înaintea verdictului. La refuz, mesajul nu ajunge la orchestrator,
 runner sau runtime-ul cognitiv, iar PMORG nu
 creează transcript Onyx, `SourceArtifact`, `Evidence`, chunk, embedding ori
 content hash. Se păstrează numai un receipt minim fără conținut sau referință
@@ -378,7 +379,7 @@ vocabularului/ancorei.
 | Odoo indisponibil | fără validare de adevăr curent și fără mutații; contextul istoric este etichetat stale |
 | Semantic Core indisponibil | regulile pur mecanice pot continua; pașii care cer memorie intră `memory_pending` |
 | Onyx cognitive runtime indisponibil | taskurile și timers rămân în Odoo; pașii cognitivi sunt reprogramați |
-| Hermes indisponibil | lease-urile expiră; backlogul rămâne vizibil și operabil manual |
+| orchestrator persistent indisponibil | lease-urile expiră; backlogul rămâne vizibil și operabil manual |
 | gateway/canal indisponibil | delivery pending și retry; fallback numai autorizat |
 | registry incompatibil | tipul/pack-ul este dezactivat fail-closed |
 | răspuns necorelat | coadă de reconciliere; fără atașare prin presupunere |
