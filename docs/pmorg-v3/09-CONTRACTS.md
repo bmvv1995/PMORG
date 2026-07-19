@@ -5,7 +5,7 @@
 | Status | Accepted semantic baseline |
 | Baseline | `RB-1/C2` |
 | Contract package | `pmorg-contracts/1.0` |
-| Data | 2026-07-18 |
+| Data | 2026-07-19 |
 
 Acest document îngheață semantica și câmpurile contractelor. La bootstrap,
 fiecare tip devine JSON Schema cu `additionalProperties: false` pe writes și
@@ -105,14 +105,31 @@ câmpurile validate din `CognitiveStepRequest`, exceptând `step_id`,
 request/content hash; la accept, operația durabilă începe cu evidence capture
 și hash-ul ei canonic.
 
-### 1.1 `BuildQualificationManifest` și admission la deployment
+### 1.1 Setul de artefacte și `BuildQualificationManifest`
 
-Axele de licențiere/utilizare sunt inputuri build-time și nu pot fi schimbate
-printr-un environment variable runtime. Fiecare artefact calificat emite:
+Setul deployabil este lista canonică, sortată după `component + platform`, a
+tuturor imaginilor, workerelor și pachetelor livrate:
+
+```yaml
+ArtifactDescriptor:
+  component: string
+  media_type: string
+  platform: string
+  digest: "sha256:<hex>"
+```
+
+`artifact_set_hash` este SHA-256 peste array-ul RFC 8785 al descriptorilor.
+`image_lock_hash` leagă aceleași elemente de registry/repository fără taguri
+mutabile.
+
+`BuildQualificationManifest` este un payload detașat; nu este inclus în
+artefactele ale căror digesturi le conține:
 
 ```yaml
 schema_version: const "pmorg.build-qualification-manifest/v1"
-artifact_digest: "sha256:<hex>"
+artifact_descriptors: nonempty array[ArtifactDescriptor]
+artifact_set_hash: "sha256:<hex>"
+image_lock_hash: "sha256:<hex>"
 pmorg_platform_commit: full_git_sha
 pmorg_spec_commit: full_git_sha
 onyx_release_tag: string
@@ -120,83 +137,247 @@ onyx_commit: full_git_sha
 onyx_surface: enum[ce, ee]
 usage_mode: enum[development_test, production]
 sbom_hash: "sha256:<hex>"
+license_report_hash: "sha256:<hex>"
+patch_ledger_report_hash: "sha256:<hex>"
+provenance_report_hash: "sha256:<hex>"
 surface_mode_report_hash: "sha256:<hex>"
 capability_catalog_hash: "sha256:<hex>"
 capability_disposition_report_hash: "sha256:<hex>"
+vulnerability_report_hash: "sha256:<hex>"
+upstream_test_report_hash: "sha256:<hex>"
 ce_boundary_report_hash: "sha256:<hex>" | null
 ee_inventory_report_hash: "sha256:<hex>" | null
-issued_at: rfc3339_utc
-verifier_identity: string
-verifier_receipt_hash: "sha256:<hex>"
-signature_ref: uri
+qualification_bundle_hash: "sha256:<hex>"
 ```
 
-Pentru `ce`, `ce_boundary_report_hash` este obligatoriu și
-`ee_inventory_report_hash` este null. Pentru `ee`, regula este inversă.
-Manifestul este RFC 8785 content-addressed, semnat de un verifier din trust
-root-ul fixat și inclus în imagine plus run bundle.
+`qualification_bundle_hash` este hash-ul RFC 8785 al mapării sortate
+`artifact_name → digest` pentru toate rapoartele de mai sus; manifestul însuși
+nu intră în bundle. Pentru `ce`, CE boundary este obligatoriu și EE inventory
+este null; pentru `ee`, regula este inversă.
 
-Orice deploy și fiecare startup cer:
+Envelope-ul de semnătură este separat și content-addressed:
+
+```yaml
+schema_version: const "pmorg.build-qualification-attestation/v1"
+build_manifest_hash: "sha256:<hex>"
+artifact_set_hash: "sha256:<hex>"
+verifier_identity: string
+trust_root_id: string
+issued_at: rfc3339_utc
+signature_bundle_hash: "sha256:<hex>"
+```
+
+Manifestul și attestation-ul sunt OCI referrers/artefacte detașate distribuite
+alături de setul deployabil. Două builduri curate independente din aceleași
+inputuri trebuie să producă același `artifact_set_hash`,
+`image_lock_hash`, `qualification_bundle_hash` și build-manifest payload
+hash; numai envelope-ul, signature și `issued_at` pot diferi.
+
+### 1.2 `DeploymentTargetDescriptor` și measurement attestation
+
+Descriptorul conține exclusiv identificatori opaci/HMAC și hash-uri de seturi
+sortate; nu conține nume de client, secrets ori endpointuri brute:
+
+```yaml
+schema_version: const "pmorg.deployment-target-descriptor/v1"
+target_uid_hmac: "hmac-sha256:<hex>"
+workload_identity_set_hash: "sha256:<hex>"
+organization_binding_set_hash: "sha256:<hex>"
+data_binding_set_hash: "sha256:<hex>"
+identity_provider_set_hash: "sha256:<hex>"
+channel_binding_set_hash: "sha256:<hex>"
+secret_binding_set_hash: "sha256:<hex>"
+network_policy_hash: "sha256:<hex>"
+resource_classification_report_hash: "sha256:<hex>"
+production_resource_count: int64
+unknown_resource_count: int64
+derived_target_class: enum[synthetic_sandbox, client]
+```
+
+`target_fingerprint` este SHA-256 peste descriptorul RFC 8785. Clasa
+`synthetic_sandbox` este permisă numai când ambele count-uri sunt zero,
+fiecare binding are atestare sintetică și network policy refuză endpointurile de
+producție; orice necunoscut sau măsurare imposibilă derivă `client`.
+
+```yaml
+schema_version: const "pmorg.target-measurement-attestation/v1"
+target_descriptor_hash: "sha256:<hex>"
+target_fingerprint: "sha256:<hex>"
+resource_evidence_bundle_hash: "sha256:<hex>"
+measured_at: rfc3339_utc
+valid_until: rfc3339_utc
+verifier_identity: string
+trust_root_id: string
+revocation_status_hash: "sha256:<hex>"
+signature_bundle_hash: "sha256:<hex>"
+```
+
+Verifierul de deploy și startup guard-ul reconstruiesc descriptorul din APIs
+trusted ale platformei, nu din environment variables controlate de workload.
+La fiecare deploy și startup se recalculează fingerprint-ul; imposibilitatea de
+măsurare, mismatch-ul ori evidence necunoscut refuză fail-closed.
+
+### 1.3 `DeploymentAdmissionRecord`
 
 ```yaml
 schema_version: const "pmorg.deployment-admission/v1"
-admission_id: uuid
-artifact_digest: "sha256:<hex>"
+admission_id: uuidv7
+artifact_set_hash: "sha256:<hex>"
 build_manifest_hash: "sha256:<hex>"
+build_attestation_hash: "sha256:<hex>"
 onyx_surface: enum[ce, ee]
 usage_mode: enum[development_test, production]
-target_class: enum[synthetic_sandbox, client]
-target_id_hash: "sha256:<hex>"
-admission_basis: enum[ce_release, synthetic_environment, onyx_enterprise_authorization]
-authorized_entity_ref: string | null
-seat_scope_ref: string | null
-agreement_ref: string | null
-environment_attestation_ref: uri | null
+target_descriptor_hash: "sha256:<hex>"
+target_fingerprint: "sha256:<hex>"
+target_measurement_attestation_hash: "sha256:<hex>"
+target_class: enum[synthetic_sandbox, client] # server-set
+admission_basis: enum[synthetic_environment, ce_release, onyx_enterprise_authorization]
+authorization_evidence_hash: "sha256:<hex>" | null
+authorized_entity_hmac: "hmac-sha256:<hex>" | null
+seat_scope_hash: "sha256:<hex>" | null
+agreement_hash: "sha256:<hex>" | null
 valid_from: rfc3339_utc
 valid_until: rfc3339_utc
+trusted_clock_id: string
+max_clock_skew_seconds: int64
+revocation_status_hash: "sha256:<hex>"
+next_revalidation_at: rfc3339_utc
 verifier_identity: string
+trust_root_id: string
 verifier_receipt_hash: "sha256:<hex>"
-signature_ref: uri
+signature_bundle_hash: "sha256:<hex>"
 ```
 
-Recordul este imuabil, semnat, legat de digestul buildului și target și nu
-poate fi emis de SUT. `ee + development_test` cere
-`target_class=synthetic_sandbox`, `admission_basis=synthetic_environment` și
-o atestare care dovedește absența datelor, identităților, canalelor,
-credențialelor și endpointurilor de producție. `ee + production` cere
-`target_class=client`, `admission_basis=onyx_enterprise_authorization`,
-entitate, seats/scope și acord în intervalul valid. Orice combinație
-inconsistentă, lipsă, expirată, nesemnată, emisă de un verifier neacceptat ori
-legată de alt build/target este refuzată înainte de pornirea serviciilor.
-Testele folosesc numai ținte și credențiale sintetice.
+Matricea normativă este exhaustivă:
 
-### 1.2 `CapabilityDispositionRecord`
+| Suprafață | Mod | Target | Basis | Cerință suplimentară |
+|---|---|---|---|---|
+| `ce` | `development_test` | `synthetic_sandbox` | `synthetic_environment` | environment measurement valid |
+| `ee` | `development_test` | `synthetic_sandbox` | `synthetic_environment` | environment measurement + EE inventory |
+| `ce` | `production` | `client` | `ce_release` | release admission valid |
+| `ee` | `production` | `client` | `onyx_enterprise_authorization` | authorization evidence, entity, seats/scope, agreement |
 
-Catalogul capabilităților necesare este versionat și content-addressed. Raportul
-de release conține exact un record pentru fiecare element:
+Pentru primele trei rânduri, câmpurile comerciale sunt null. Pentru ultimul
+sunt obligatorii. Recordul complet este sealed/private; manifestul public
+conține numai record hash, verdict și cod de refuz. La deploy și startup se
+verifică trusted time, skew, trust root, signature, revocation, build și target;
+revalidarea are loc cel târziu la `next_revalidation_at`. Există un record
+distinct per deployment/target, stocat content-addressed sub
+`deployments/<target_fingerprint>/<admission_id>.json`. Testele folosesc numai
+fixtures și credențiale sintetice, inclusiv pentru simularea celulelor
+`production`.
+
+### 1.4 `DistributionAdmissionRecord`
+
+Publicarea în registry și exportul sunt operații separate de deploy:
 
 ```yaml
-schema_version: const "pmorg.capability-disposition/v1"
-catalog_version: semver
-catalog_hash: "sha256:<hex>"
-capability_id: string
-pmorg_requirement_ids: array[string]
-onyx_candidate_refs: array[string]
-onyx_qualification: enum[pass, fail, not_available, not_applicable]
-disposition: enum[reuse, patch, pmorg_independent]
-license_class: string
-rationale: string
-adr_or_waiver_ref: uri | null
-protector_test_refs: array[string]
-evidence_hashes: array["sha256:<hex>"]
+schema_version: const "pmorg.distribution-admission/v1"
+admission_id: uuidv7
+operation: enum[registry_publish, artifact_export]
+artifact_set_hash: "sha256:<hex>"
+build_manifest_hash: "sha256:<hex>"
+build_attestation_hash: "sha256:<hex>"
+onyx_surface: enum[ce, ee]
+usage_mode: enum[development_test, production]
+destination_class: enum[controlled_synthetic_registry, client_destination]
+destination_fingerprint: "sha256:<hex>"
+admission_basis: enum[synthetic_environment, ce_release, onyx_enterprise_authorization]
+authorization_evidence_hash: "sha256:<hex>" | null
+valid_until: rfc3339_utc
+trusted_clock_id: string
+revocation_status_hash: "sha256:<hex>"
+verifier_identity: string
+trust_root_id: string
+signature_bundle_hash: "sha256:<hex>"
 ```
 
-Dacă un candidat Onyx are `onyx_qualification=pass`, orice disposition diferit
-de `reuse` cere ADR sau waiver versionat. Un item lipsă, un requirement fără
-capability mapping, evidence lipsă ori o reimplementare nedeclarată invalidează
-raportul. Provenance scan-ul compară căile PMORG-owned cu arborii EE fixați prin
-hash și fingerprint normalizat; potrivirile intră în review și nu pot primi
-automat verdict de cod independent.
+Ambele `development_test` permit numai
+`controlled_synthetic_registry + synthetic_environment`. `ce + production`
+cere `client_destination + ce_release`; `ee + production` cere
+`client_destination + onyx_enterprise_authorization` și authorization
+evidence valid. Orice altă combinație este refuzată înainte de publish/export.
+Recordurile sunt distincte și se păstrează sub
+`distributions/<destination_fingerprint>/<admission_id>.json`.
+
+### 1.5 Capability disposition
+
+```yaml
+ContentAddressedSourceRef:
+  repository: uri
+  commit: full_git_sha
+  paths: nonempty array[string]
+  tree_hash: "sha256:<hex>"
+
+OnyxCapabilityCandidate:
+  candidate_id: string
+  source_ref: ContentAddressedSourceRef
+  onyx_surface: enum[ce, ee]
+  license_class: enum[mit-expat, onyx-enterprise, third-party]
+  qualification: enum[pass, fail]
+  qualification_evidence_hashes: nonempty array["sha256:<hex>"]
+
+CapabilityDispositionRecord:
+  schema_version: const "pmorg.capability-disposition/v1"
+  catalog_version: semver
+  catalog_hash: "sha256:<hex>"
+  capability_id: string
+  pmorg_requirement_ids: nonempty array[string]
+  candidates: nonempty array[OnyxCapabilityCandidate]
+  disposition: enum[reuse, patch, pmorg_independent]
+  selected_candidate_ids: array[string]
+  implementation_refs: nonempty array[ContentAddressedSourceRef]
+  patch_ledger_refs: array[string]
+  post_disposition_verdict: enum[pass, fail]
+  rationale: string
+  adr_or_waiver_ref: uri | null
+  protector_test_refs: nonempty array[string]
+  evidence_hashes: nonempty array["sha256:<hex>"]
+```
+
+Invariante:
+
+- `reuse`: cel puțin un candidat selectat are `pass`; implementation refs
+  indică sursa selectată; patch refs sunt goale;
+- `patch`: există candidat selectat, implementation refs și patch-ledger refs
+  non-goale, iar verdictul post-patch este `pass`;
+- `pmorg_independent`: implementation refs sunt PMORG-owned și patch refs sunt
+  goale; dacă orice candidat are `pass`, ADR/waiver este obligatoriu;
+- orice record acceptat are `post_disposition_verdict=pass`;
+- IDs, requirement refs, candidate IDs și record hashes sunt unice.
+
+Envelope-ul raportului conține `catalog_hash`, count-ul catalogului, array-ul
+sortat de record hashes, `covered_count`, `duplicate_count`,
+`missing_count` și report hash. PASS cere exact un record per catalog item,
+100% coverage și zero missing/duplicate.
+
+### 1.6 `ProvenanceScanReport`
+
+```yaml
+schema_version: const "pmorg.provenance-scan-report/v1"
+scanner_name: string
+scanner_version: semver
+scanner_artifact_digest: "sha256:<hex>"
+algorithm_id: string
+normalization_spec_version: semver
+similarity_threshold_basis_points: int64
+upstream_repository: uri
+upstream_commit: full_git_sha
+ee_tree_hash: "sha256:<hex>"
+pmorg_tree_hash: "sha256:<hex>"
+scanned_path_count: int64
+match_records_hash: "sha256:<hex>"
+exact_match_count: int64
+similarity_match_count: int64
+unresolved_count: int64
+report_evidence_hash: "sha256:<hex>"
+```
+
+Match records leagă calea PMORG, calea EE, hash-urile, similarity score,
+resolution `not_copy|licensed_patch|removed|unresolved`, reviewer/verifier și
+evidence hash. Pragul și algoritmul sunt fixate în baseline manifest; PASS cere
+`unresolved_count=0`. Similaritatea peste prag este la fel de obligatorie ca
+exact-hash matching.
 
 ## 2. `OrganizationContext`
 
