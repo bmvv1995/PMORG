@@ -2,9 +2,9 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 
 ## 1. Obiectiv
 
@@ -19,7 +19,7 @@ explicite.
 
 ## 2. Repository-uri
 
-Modelul acceptat în `RB-1/C1` este:
+Modelul acceptat în `RB-1/C2` este:
 
 | Repo | Responsabilitate |
 |---|---|
@@ -154,30 +154,38 @@ Repository-ul Onyx declară:
 Surse oficiale: [licența repository-ului Onyx](https://github.com/onyx-dot-app/onyx/blob/main/LICENSE)
 și [Onyx Enterprise License](https://github.com/onyx-dot-app/onyx/blob/main/backend/ee/LICENSE).
 
-Politica MVP:
+Politica profilurilor de livrare:
 
-1. buildul CE exclude directoarele și importurile EE;
-2. CI scanează source tree, dependency graph și imagini pentru cod EE;
-3. notice-ul Onyx și licențele third-party sunt păstrate;
-4. brandul produsului este PMORG, cu atribuirea cerută;
-5. orice folosire a EE în producție cere licență validă și decizie separată;
-6. înaintea primei distribuții comerciale se face review juridic al buildului
+1. fiecare build declară exact un profil `ce` sau `licensed-ee`;
+2. profilul `ce` exclude directoarele și importurile EE și este scanat în
+   source tree, dependency graph și imagini;
+3. profilul `licensed-ee` inventariază capabilitățile și fișierele EE folosite,
+   fără a le copia în module PMORG;
+4. o capabilitate Onyx adecvată se reutilizează; nu se rescrie numai pentru a
+   evita EE;
+5. notice-ul Onyx și licențele third-party sunt păstrate, iar brandul
+   produsului este PMORG cu atribuirea cerută;
+6. activarea EE într-un deployment client cere licență/autorizare comercială
+   înainte de livrare;
+7. înaintea primei distribuții comerciale se face review juridic al buildului
    concret, nu numai al intenției arhitecturale.
 
 Un risc important: documentația Onyx indică faptul că RBAC-ul pentru agenți,
 actions și documente și accesul diferențiat la documente sunt funcții
 Enterprise. Vezi [Onyx Access Controls](https://docs.onyx.app/security/architecture/access_controls).
-Prin urmare, până la o decizie de licențiere sau o implementare independentă
-auditată, MVP-ul CE folosește corpus sintetic cu acces uniform. ACL-ul Odoo și
-izolarea PMORG rămân obligatorii, dar nu sunt prezentate ca substitut automat
-pentru permission-aware retrieval în knowledge-ul Onyx.
+Prin urmare, profilul `ce` folosește corpus sintetic cu acces uniform până
+când permission-aware retrieval este calificat. Profilul `licensed-ee` poate
+folosi controlul de acces Onyx existent, dar trebuie să-l califice independent
+și să închidă poarta comercială înainte de deployment client. ACL-ul Odoo și
+izolarea PMORG rămân obligatorii în ambele profiluri.
 
 ## 8. Gate-uri pentru fiecare upgrade
 
 ### Fork și build
 
 - build upstream curat înainte de aplicarea modificărilor PMORG;
-- zero cod EE în artefactul CE;
+- conformitate cu profilul declarat: zero cod EE pentru `ce`; inventar complet
+  și autorizare de deployment pentru `licensed-ee`;
 - toate imaginile și dependențele fixate;
 - nicio modificare upstream neinventariată;
 - testele upstream și PMORG verzi.
