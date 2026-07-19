@@ -252,7 +252,7 @@ Schema are `additionalProperties: false`. Nu include fragment, termen potrivit,
 selector, content ref/hash, prompt, autor derivat din text sau metadata liberă.
 
 După acceptare și capturarea evidence, Turn Admission emite singurul contract
-inbound pe care îl pot primi Hermes/runnerul ori runtime-ul cognitiv:
+inbound pe care îl pot primi orchestratorul/runnerul ori runtime-ul cognitiv:
 
 ```yaml
 schema_version: const "pmorg.admitted-message/v1"
