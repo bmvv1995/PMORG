@@ -204,5 +204,5 @@ iar proba obligatorie este
 [`C-PRIVACY-001`](12-ACCEPTANCE-TRACEABILITY.md#5-g3-c--semantic-core).
 La refuz, singurul artefact durabil este receipt-ul metadata-only; nu se
 persistă conținut, fragment, `content_ref`, `content_hash`, transcript,
-evidence, chunk, prompt ori checkpoint Hermes/runner și nu se emite
+evidence, chunk, prompt ori checkpoint orchestrator/runner și nu se emite
 `AdmittedMessage`.
