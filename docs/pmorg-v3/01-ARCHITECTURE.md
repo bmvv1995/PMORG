@@ -10,8 +10,11 @@
 ## 1. Decizia centrală
 
 PMORG v3 este o platformă Odoo-first construită printr-un fork guvernat al
-Onyx. Fiecare build declară un profil de livrare `ce` sau `licensed-ee`;
-profilul schimbă proveniența și condițiile comerciale, nu ownership-ul PMORG.
+Onyx. Fiecare build declară independent `onyx_surface: ce|ee` și
+`usage_mode: development_test|production`. Aceste axe nu schimbă ownership-ul
+formal Odoo, ownership-ul ledgerului Semantic Core ori contractul
+orchestratorului. Modulele PMORG create independent rămân separate; patchurile
+directe asupra codului Onyx EE rămân sub termenii Onyx Enterprise.
 
 - **Odoo** este ontologia executabilă, registrul muncii formale și control
   plane-ul efectelor organizaționale.
