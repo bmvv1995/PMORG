@@ -2,9 +2,9 @@
 
 | Câmp | Valoare |
 |---|---|
-| Status | Accepted — requirements baseline `RB-1/C1` |
-| Versiune | `3.0-baseline.2` |
-| Data | 2026-07-18 |
+| Status | Accepted — requirements baseline `RB-1/C2` |
+| Versiune | `3.0-baseline.3` |
+| Data | 2026-07-19 |
 
 ## 1. Rolul Semantic Core
 
@@ -271,7 +271,7 @@ Orice mesaj oficial — din UI sau gateway — trece determinist prin:
 1. validare OrganizationContext și identity binding
 2. poartă tranzitorie de intimitate/secrete, înaintea oricărei stocări PMORG
 3. capturare durabilă SourceArtifact + Evidence numai dacă poarta permite
-4. emitere `AdmittedMessage` fără content/ref/hash către Hermes/runner/runtime
+4. emitere `AdmittedMessage` fără content/ref/hash către orchestrator/runner/runtime
 5. recall autorizat
 6. execuție cognitivă Onyx
 7. preflight pentru fiecare action/tool
@@ -288,7 +288,7 @@ Un refuz la pasul 2 nu persistă content, content reference, hash, transcript,
 chunk, embedding, evidence ori prompt. Receipt-ul minimal conține numai
 identificatorul mesajului, versiunea politicii, un reason code fără ecou din
 conținut și timpul recepției.
-Hermes/runnerul nu vede și nu persistă envelope-ul raw înaintea pasului 4.
+Orchestratorul/runnerul nu vede și nu persistă envelope-ul raw înaintea pasului 4.
 
 ## 11. Izolarea organizațională
 
@@ -322,4 +322,4 @@ recall(context, query, temporal_scope)
 get_timeline(context, anchors, temporal_scope)
 ```
 
-Contractele exacte se îngheață înaintea implementării adaptorului Hermes.
+Contractele exacte se îngheață înaintea implementării unui adaptor de orchestrator; Hermes rămâne candidat opțional.
