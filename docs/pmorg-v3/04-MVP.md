@@ -74,8 +74,10 @@ rețele dedicate. Niciun serviciu nu are default către producție.
 - digest read-only pentru gaps de proveniență și rata de acoperire;
 - tool preflight înaintea oricărei comenzi Odoo;
 - memoria personală generică dezactivată pentru agentul PMORG;
-- profil de livrare declarat; profilul `ce` conține zero cod Enterprise, iar
-  profilul `licensed-ee` inventariază funcțiile EE folosite și condiția de licențiere.
+- `onyx_surface` și `usage_mode` declarate separat; `ce` conține zero cod
+  Enterprise, iar `ee + development_test` inventariază complet EE și
+  blochează tehnic producția/distribuirea; `ee + production` cere dovadă
+  validă de autorizare pentru entitate și seats/scope.
 
 ### 4.2 Odoo PMORG
 
@@ -218,8 +220,9 @@ Identificatorii canonici ai suitei v3 au prefixul `G3-`. Astfel `G3-D`
 
 - tagul și SHA-ul Onyx, commitul PMORG, imaginile și SBOM-ul sunt fixate;
 - suita upstream trece înainte și după integrare;
-- artefactul respectă profilul declarat: `ce` fără cod Enterprise sau
-  `licensed-ee` cu dependențe EE inventariate și poartă comercială înainte de deployment;
+- artefactul respectă matricea declarată: `ce` fără cod Enterprise;
+  `ee + development_test` cu inventar și production guard; `ee + production`
+  numai cu autorizare validă și verificabilă;
 - bazele pornesc curate și migrările sunt repetabile;
 - patch ledger-ul acoperă toate modificările upstream.
 
@@ -276,7 +279,7 @@ Outputul modelului nu poate ocoli G3-B/G3-C.
 
 ### G3-H — orchestrator extern (Hermes candidat)
 
-- G3-H1: adaptorul selectat înlocuiește runnerul cu un agent determinist;
+- G3-H1: adaptorul selectat înlocuiește runnerul ca executor determinist al contractului;
 - G3-H2: orchestratorul selectat rulează operatorul înghețat la G3-G fără
   schimbarea Odoo,
   Semantic Core, scenariilor sau scorerului.
