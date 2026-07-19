@@ -3,9 +3,9 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted |
-| Baseline | `RB-1/C1` |
+| Baseline | `RB-1/C2` |
 | Scope | MVP G3-A–G3-F |
-| Data | 2026-07-18 |
+| Data | 2026-07-19 |
 
 ## 1. Regula verdictului
 
@@ -39,7 +39,7 @@ G3-A–G3-F sunt conjunctive. MVP-ul este `PASS` numai dacă toate sunt
 |---|---|---|
 | `A-FORK-001` | tagul și SHA-ul Onyx și commitul PMORG sunt fixate | 100% prezente în manifest și UI/version endpoint |
 | `A-UPSTREAM-001` | suita upstream selectată trece pe baseline curat și fork | 100% teste obligatorii; excluderile au waiver versionat |
-| `A-LIC-001` | artefactul CE nu include cod Onyx `ee` | 0 fișiere, imports sau layers EE |
+| `A-LIC-001` | artefactul respectă profilul de livrare declarat | `ce`: 0 fișiere/imports/layers EE; `licensed-ee`: inventar complet al dependențelor EE și autorizare comercială obligatorie înainte de deployment client |
 | `A-PATCH-001` | modificările upstream sunt inventariate | 100% fișiere modificate apar în patch ledger |
 | `A-MIG-001` | instalarea/migrarea din baze curate este repetabilă | 3/3 porniri curate PASS |
 | `A-RESTORE-001` | Odoo, Onyx și Semantic Ledger pot fi restaurate independent | 1 restore complet PASS pentru fiecare store per RC |
@@ -86,7 +86,7 @@ expirare și compensating control. Fără triere, gate-ul este FAIL.
 | `C-MCP-001` | MCP este interoperabil și versionat | 100% contract tests cu un client MCP independent |
 | `C-TENANT-001` | cross-organization retrieval este refuzat | 0 rezultate/citations în toate cazurile negative |
 | `C-HIL-001` | omul/agentul cognitiv nu poate judeca interpretarea claim-ului | 0 verdicturi, approvals, tranziții sau actions/UI/API umane/agentice asupra claim-ului, inclusiv approve/reject integral și editarea kind/owner/termen/predicat/valoare; actorul fiecărei tranziții este serviciul de policy; suprafețele umane pozitive sunt numai vocabulary/anchor reconciliation |
-| `C-PRIVACY-001` | denylist/secrets gate refuză înaintea stocării și orchestrării persistente | 0 content, refs, hashes, transcripts, chunks, evidence, prompts ori checkpoint/log/input Hermes/runner; mesajul nu ajunge la runtime; exact 1 receipt metadata-only |
+| `C-PRIVACY-001` | denylist/secrets gate refuză înaintea stocării și orchestrării persistente | 0 content, refs, hashes, transcripts, chunks, evidence, prompts ori checkpoint/log/input orchestrator/runner; mesajul nu ajunge la runtime; exact 1 receipt metadata-only |
 
 Scorurile probabilistice ale unui model nu participă la G3-C. Pentru G3-G,
 pragurile de extraction/recall se stabilesc pe calibration și se îngheață
@@ -184,7 +184,7 @@ o valoare nu este declarată arbitrar defect funcțional în MVP.
 | `MEM-001..012` | `C-*`, `F-MEM-*`, `F-GAP-*` | semantic projection, validation/timeline și coverage report |
 | `INT-001..006` | `C-PRIVACY-*`, `D-TRACE-*`, channel contract tests | privacy receipt și message/evidence/receipt chain |
 | `ORC-001..006` | runner contracts, `F-*` | run/task event trace |
-| `PLT-001..005` | `A-*` | baseline manifest, SBOM, patch/license reports |
+| `PLT-001..006` | `A-*` | baseline manifest, SBOM, patch/license reports |
 | `SEC-001..006` | `B-ACL-*`, `C-TENANT-*`, `X-*` | security scorecard și negative traces |
 | `EVAL-001..007` | G3-A–G3-F | signed run bundle și verdict |
 
