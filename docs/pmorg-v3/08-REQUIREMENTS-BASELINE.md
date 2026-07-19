@@ -117,9 +117,10 @@ O schimbare de fond după `RB-1/C2` cere ADR nou, impact asupra cerințelor/test
 | `PLT-002` | Semantic Core SHALL fi bounded context first-class, cu ownership și migrații proprii. |
 | `PLT-003` | Odoo DB, Onyx DB și Semantic Ledger SHALL folosi baze și roluri distincte; Odoo SHALL NOT scana DB-urile PMORG. |
 | `PLT-004` | Codul PMORG de domeniu SHALL fi separat de codul upstream, iar patchurile upstream SHALL fi inventariate. |
-| `PLT-005` | Fiecare build SHALL fixa `onyx_surface: ce|ee` și `usage_mode: development_test|production` într-un `BuildQualificationManifest` content-addressed și semnat; `ce` SHALL exclude EE; orice suprafață `ee` SHALL avea inventar complet. |
-| `PLT-006` | O capabilitate Onyx existentă SHALL fi reutilizată implicit dacă trece contractele PMORG, izolarea, securitatea și constrângerile comerciale; un catalog versionat și un capability-disposition report SHALL acoperi 100% capabilitățile necesare cu `reuse|patch|pmorg_independent`, evidence și ADR/waiver pentru orice abatere aplicabilă. Codul EE SHALL NOT fi copiat în module PMORG, iar fiecare patch direct EE SHALL declara `license_class=onyx-enterprise` fără revendicare de ownership PMORG. |
-| `PLT-007` | Orice deploy SHALL cere un `DeploymentAdmissionRecord` semnat și legat de artifact digest, build manifest, target, suprafață, mod și valabilitate. `ee + development_test` SHALL admite numai sandbox sintetic atestat și SHALL refuza producția/distribuirea; `ee + production` SHALL cere autorizare validă pentru entitate, seats/scope și acord. Missing, expired, target/build mismatch, verifier neacceptat sau schimbarea liberă a axelor SHALL refuza fail-closed la deploy și startup. |
+| `PLT-005` | Fiecare build SHALL fixa `onyx_surface: ce|ee` și `usage_mode: development_test|production` într-un manifest și o atestare semnată, detașate de setul exact de artefacte calificat. Două builduri curate independente SHALL produce același artifact-set hash și același qualification payload hash. `ce` SHALL exclude EE; orice `ee` SHALL avea inventar complet. |
+| `PLT-006` | O capabilitate Onyx existentă SHALL fi reutilizată implicit dacă trece contractele PMORG, izolarea, securitatea și constrângerile comerciale. Catalogul, candidate refs structurate, recordurile condiționale, report envelope și provenance scan versionat SHALL demonstra exact-once `reuse|patch|pmorg_independent`, implementation/patch refs, verdict post-disposition, evidence și ADR/waiver. Codul EE SHALL NOT fi copiat în module PMORG, iar fiecare patch direct EE SHALL declara `license_class=onyx-enterprise` fără ownership PMORG. |
+| `PLT-007` | Orice deploy și startup SHALL recomputa descriptorul/fingerprint-ul canonic al țintei și SHALL valida measurement attestation plus un `DeploymentAdmissionRecord` content-addressed, semnat, nerevocat și legat de artifact set, build attestation, target, suprafață, mod și timp trusted. Orice `development_test`, CE sau EE, SHALL admite numai sandbox sintetic; `ce + production` SHALL cere release admission, iar `ee + production` SHALL cere suplimentar autorizare Enterprise. Unknown/unmeasurable, missing, expired, revoked, mismatch sau verifier neacceptat SHALL refuza fail-closed. |
+| `PLT-008` | Orice registry publish ori artifact export SHALL valida un `DistributionAdmissionRecord`. Orice `development_test`, CE sau EE, SHALL permite numai o destinație sintetică controlată; `production` SHALL urma aceeași separare CE/EE și aceeași autorizare aplicabilă ca deploymentul. |
 | `SEC-001` | Fiecare operație SHALL avea `organization_id`, instanță Odoo, companie, identitate și registry fingerprint. |
 | `SEC-002` | Accesul cross-organization și cross-company SHALL fi refuzat înainte de retrieval sau action. |
 | `SEC-003` | Secretele SHALL NOT apărea în evidence, prompturi, logs ori receipts. |
@@ -171,11 +172,11 @@ ADR-309–316 sunt acceptate cu următoarea interpretare:
 - bazele și rolurile autoritare sunt separate;
 - `PMORG` și `PMORG-Platform` sunt repository-uri distincte;
 - Onyx-PMORG este workspace-ul principal, Odoo rămâne formal/fallback;
-- suprafața Onyx și modul de utilizare sunt declarate independent; `ce` nu
-  este critical path pentru Semantic Core ori contracte; orice `ee` cere
-  inventar complet, iar un admission record semnat leagă buildul de țintă:
-  `development_test` admite numai sandbox sintetic, iar `production` cere
-  autorizare validă fail-closed;
+- suprafața Onyx și modul de utilizare sunt independente; `ce` nu este
+  critical path pentru Semantic Core ori contracte; orice `ee` cere inventar
+  complet; ambele `development_test` admit numai sandbox/destinație sintetică;
+  `ce + production` cere release admission, iar `ee + production` cere
+  suplimentar autorizare Enterprise fail-closed;
 - longitudinalitatea deterministă este parte din MVP, nu etapă opțională.
 - HIL asupra semanticii este exclusiv vocabular/ancoră; claim-urile nu au
   coadă umană de interpretare, iar approvals/outcomes business rămân fluxuri
