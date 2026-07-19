@@ -3,7 +3,7 @@
 | Câmp | Valoare |
 |---|---|
 | Status | Accepted semantic baseline |
-| Baseline | `RB-1/C1` |
+| Baseline | `RB-1/C2` |
 | Contract package | `pmorg-contracts/1.0` |
 | Data | 2026-07-18 |
 
@@ -104,6 +104,99 @@ câmpurile validate din `CognitiveStepRequest`, exceptând `step_id`,
 `(adapter_id, channel_account_id, external_message_id)`. La deny nu se persistă
 request/content hash; la accept, operația durabilă începe cu evidence capture
 și hash-ul ei canonic.
+
+### 1.1 `BuildQualificationManifest` și admission la deployment
+
+Axele de licențiere/utilizare sunt inputuri build-time și nu pot fi schimbate
+printr-un environment variable runtime. Fiecare artefact calificat emite:
+
+```yaml
+schema_version: const "pmorg.build-qualification-manifest/v1"
+artifact_digest: "sha256:<hex>"
+pmorg_platform_commit: full_git_sha
+pmorg_spec_commit: full_git_sha
+onyx_release_tag: string
+onyx_commit: full_git_sha
+onyx_surface: enum[ce, ee]
+usage_mode: enum[development_test, production]
+sbom_hash: "sha256:<hex>"
+surface_mode_report_hash: "sha256:<hex>"
+capability_catalog_hash: "sha256:<hex>"
+capability_disposition_report_hash: "sha256:<hex>"
+ce_boundary_report_hash: "sha256:<hex>" | null
+ee_inventory_report_hash: "sha256:<hex>" | null
+issued_at: rfc3339_utc
+verifier_identity: string
+verifier_receipt_hash: "sha256:<hex>"
+signature_ref: uri
+```
+
+Pentru `ce`, `ce_boundary_report_hash` este obligatoriu și
+`ee_inventory_report_hash` este null. Pentru `ee`, regula este inversă.
+Manifestul este RFC 8785 content-addressed, semnat de un verifier din trust
+root-ul fixat și inclus în imagine plus run bundle.
+
+Orice deploy și fiecare startup cer:
+
+```yaml
+schema_version: const "pmorg.deployment-admission/v1"
+admission_id: uuid
+artifact_digest: "sha256:<hex>"
+build_manifest_hash: "sha256:<hex>"
+onyx_surface: enum[ce, ee]
+usage_mode: enum[development_test, production]
+target_class: enum[synthetic_sandbox, client]
+target_id_hash: "sha256:<hex>"
+admission_basis: enum[ce_release, synthetic_environment, onyx_enterprise_authorization]
+authorized_entity_ref: string | null
+seat_scope_ref: string | null
+agreement_ref: string | null
+environment_attestation_ref: uri | null
+valid_from: rfc3339_utc
+valid_until: rfc3339_utc
+verifier_identity: string
+verifier_receipt_hash: "sha256:<hex>"
+signature_ref: uri
+```
+
+Recordul este imuabil, semnat, legat de digestul buildului și target și nu
+poate fi emis de SUT. `ee + development_test` cere
+`target_class=synthetic_sandbox`, `admission_basis=synthetic_environment` și
+o atestare care dovedește absența datelor, identităților, canalelor,
+credențialelor și endpointurilor de producție. `ee + production` cere
+`target_class=client`, `admission_basis=onyx_enterprise_authorization`,
+entitate, seats/scope și acord în intervalul valid. Orice combinație
+inconsistentă, lipsă, expirată, nesemnată, emisă de un verifier neacceptat ori
+legată de alt build/target este refuzată înainte de pornirea serviciilor.
+Testele folosesc numai ținte și credențiale sintetice.
+
+### 1.2 `CapabilityDispositionRecord`
+
+Catalogul capabilităților necesare este versionat și content-addressed. Raportul
+de release conține exact un record pentru fiecare element:
+
+```yaml
+schema_version: const "pmorg.capability-disposition/v1"
+catalog_version: semver
+catalog_hash: "sha256:<hex>"
+capability_id: string
+pmorg_requirement_ids: array[string]
+onyx_candidate_refs: array[string]
+onyx_qualification: enum[pass, fail, not_available, not_applicable]
+disposition: enum[reuse, patch, pmorg_independent]
+license_class: string
+rationale: string
+adr_or_waiver_ref: uri | null
+protector_test_refs: array[string]
+evidence_hashes: array["sha256:<hex>"]
+```
+
+Dacă un candidat Onyx are `onyx_qualification=pass`, orice disposition diferit
+de `reuse` cere ADR sau waiver versionat. Un item lipsă, un requirement fără
+capability mapping, evidence lipsă ori o reimplementare nedeclarată invalidează
+raportul. Provenance scan-ul compară căile PMORG-owned cu arborii EE fixați prin
+hash și fingerprint normalizat; potrivirile intră în review și nu pot primi
+automat verdict de cod independent.
 
 ## 2. `OrganizationContext`
 
