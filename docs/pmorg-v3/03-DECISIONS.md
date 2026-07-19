@@ -31,8 +31,9 @@ declarăm prototipurile drept implementare v3.
 
 **Decizie:** release-ul Onyx fixat în manifest devine codebase-ul inițial
 pentru chat, UI, agenți, knowledge, RAG, model routing și actions. PMORG este
-nucleu first-class al produsului rezultat, nu plugin opțional. Proveniența CE
-sau EE a unei capabilități este declarată prin profilul de livrare.
+nucleu first-class al produsului rezultat, nu plugin opțional. Fiecare build
+fixează separat `onyx_surface: ce|ee` și
+`usage_mode: development_test|production` într-un manifest semnat.
 
 **Consecințe:** pipeline-ul conversațional PMORG nu poate fi ocolit prin
 endpointuri generice Onyx. Fork-ul are nevoie de politică upstream și
@@ -113,8 +114,8 @@ fi trecut pe date ori infrastructură de producție.
 Turn Coordinator: verificare context, poartă de intimitate înaintea stocării,
 evidence capture, recall, cognitive execution, tool preflight, semantic
 validation și receipts. Gateway/UI trimit raw content numai în Turn Admission;
-Hermes/runnerul și runtime-ul primesc după acceptare doar `AdmittedMessage`
-fără content/ref/hash. Un refuz nu traversează orchestratorul persistent.
+orchestratorul/runnerul și runtime-ul primesc după acceptare doar
+`AdmittedMessage` fără content/ref/hash. Un refuz nu traversează orchestratorul persistent.
 
 **Motiv:** pașii de siguranță nu trebuie să depindă de alegerea modelului de
 a apela un tool.
@@ -223,27 +224,35 @@ devin stare autoritativă v3.
 
 **Status:** Accepted prin decizia ownerului (2026-07-19)
 
-**Decizie:** fiecare build declară `onyx_surface: ce|ee` și
-`usage_mode: development_test|production`. O capabilitate Onyx existentă se
-reutilizează implicit dacă trece contractele PMORG, izolarea, securitatea și
-constrângerile comerciale; abaterea cere ADR sau waiver versionat. Codul EE nu
-se copiază în module PMORG.
+**Decizie:** fiecare build fixează `onyx_surface: ce|ee` și
+`usage_mode: development_test|production` într-un
+`BuildQualificationManifest` content-addressed și semnat. Axele nu sunt
+flaguri runtime libere. O capabilitate Onyx existentă se reutilizează implicit
+dacă trece contractele PMORG, izolarea, securitatea și constrângerile
+comerciale; abaterea cere ADR sau waiver versionat. Un catalog versionat al
+capabilităților necesare și un capability-disposition report complet fac
+decizia `reuse|patch|pmorg_independent` verificabilă. Codul EE nu se copiază
+în module PMORG.
 
 Suprafața `ee` poate fi copiată și modificată pentru dezvoltare și testare în
 limitele licenței Onyx Enterprise, fără a declara fals o licență de producție.
-Orice utilizare, distribuire ori exploatare `ee + production` este refuzată
-fail-closed fără o dovadă validă care leagă entitatea autorizată, numărul/scope-ul
-de seats și acordul aplicabil. Patchurile directe asupra Software-ului EE și
-drepturile aferente rămân sub termenii Onyx Enterprise; numai modulele PMORG
-create independent au ownership PMORG separat.
+Orice suprafață `ee` are inventar complet. Niciun artefact `ee` nu poate fi
+distribuit ori pornit numai prin declararea unui mod: calea de deploy și
+startup-ul cer un `DeploymentAdmissionRecord` semnat, legat de digestul
+artefactului și ținta concretă. `ee + development_test` admite exclusiv o
+țintă sintetică atestată și refuză producția/distribuirea; `ee + production`
+cere autorizare verificată pentru entitate, seats/scope, acord și interval de
+valabilitate. Missing, expired, target/build mismatch ori un record emis de un
+verifier neacceptat refuză fail-closed. Patchurile directe asupra Software-ului
+EE și drepturile aferente rămân sub termenii Onyx Enterprise; numai modulele
+PMORG create independent au ownership PMORG separat.
 
 **Consecințe:** calificarea `ce` rămâne o variantă selectabilă și verifică
 absența codului EE, dar nu este critical path pentru Semantic Core, contracte
-sau integrarea PMORG în Onyx. Orice suprafață `ee` cere proveniență completă;
-`ee + development_test` adaugă o gardă tehnică împotriva
-producției/distribuirii. Gate A testează matricea suprafață × mod, iar
-`ee + production` adaugă autorizarea verificabilă și nu poate trece pe baza
-unei promisiuni viitoare de licențiere.
+sau integrarea PMORG în Onyx. `G3-A` testează manifestul, inventarul,
+disposition report-ul și admission-ul pentru fiecare celulă declarată. O
+promisiune viitoare de licențiere, un environment variable ori schimbarea
+manuală a modului nu pot autoriza producția.
 
 ## ADR-318 — Contractul orchestratorului este implementation-agnostic
 
