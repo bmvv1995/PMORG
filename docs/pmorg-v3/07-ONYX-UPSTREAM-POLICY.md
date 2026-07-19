@@ -163,18 +163,19 @@ Politica de build declară două axe independente:
 2. `usage_mode: development_test|production`;
 3. `ce` exclude directoarele/importurile EE și este scanat în source tree,
    dependency graph și fiecare layer salvat;
-4. `ee + development_test` inventariază capabilitățile, fișierele,
-   dependențele, patchurile și layers EE și activează o gardă care refuză
-   producția și distribuirea;
-5. `ee + production` cere o dovadă verificabilă pentru entitatea autorizată,
+4. orice build cu `onyx_surface: ee` inventariază complet capabilitățile,
+   fișierele, dependențele, patchurile și layers EE;
+5. `ee + development_test` adaugă o gardă tehnică ce refuză producția și
+   distribuirea;
+6. `ee + production` adaugă o dovadă verificabilă pentru entitatea autorizată,
    numărul/scope-ul de seats și acordul aplicabil; lipsa, expirarea sau mismatch-ul
    refuză pornirea/deploymentul;
-6. o capabilitate Onyx se reutilizează implicit numai dacă trece contractele
+7. o capabilitate Onyx se reutilizează implicit numai dacă trece contractele
    PMORG, izolarea, securitatea și constrângerile comerciale; abaterea cere ADR
    sau waiver versionat;
-7. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
+8. codul EE nu se copiază în module PMORG, iar patchurile directe EE rămân sub
    termenii Onyx Enterprise;
-8. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
+9. notice-ul Onyx și licențele third-party sunt păstrate; înaintea primei
    producții sau distribuții comerciale se face review juridic al buildului
    concret.
 
@@ -193,9 +194,9 @@ izolarea PMORG rămân obligatorii în toate combinațiile.
 ### Fork și build
 
 - build upstream curat înainte de aplicarea modificărilor PMORG;
-- conformitate cu matricea declarată: zero EE pentru `ce`; inventar plus
-  production guard pentru `ee + development_test`; autorizare validă pentru
-  `ee + production`;
+- conformitate cu matricea declarată: zero EE pentru `ce`; inventar complet
+  pentru orice suprafață `ee`; production guard pentru `ee + development_test`;
+  autorizare validă pentru `ee + production`;
 - toate imaginile și dependențele fixate;
 - nicio modificare upstream neinventariată;
 - testele upstream și PMORG verzi.
