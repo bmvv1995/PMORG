@@ -239,10 +239,11 @@ create independent au ownership PMORG separat.
 
 **Consecințe:** calificarea `ce` rămâne o variantă selectabilă și verifică
 absența codului EE, dar nu este critical path pentru Semantic Core, contracte
-sau integrarea PMORG în Onyx. `ee + development_test` cere proveniență
-completă și o gardă tehnică împotriva producției/distribuirii. Gate A testează
-matricea suprafață × mod, iar `ee + production` nu poate trece pe baza unei
-promisiuni viitoare de licențiere.
+sau integrarea PMORG în Onyx. Orice suprafață `ee` cere proveniență completă;
+`ee + development_test` adaugă o gardă tehnică împotriva
+producției/distribuirii. Gate A testează matricea suprafață × mod, iar
+`ee + production` adaugă autorizarea verificabilă și nu poate trece pe baza
+unei promisiuni viitoare de licențiere.
 
 ## ADR-318 — Contractul orchestratorului este implementation-agnostic
 
