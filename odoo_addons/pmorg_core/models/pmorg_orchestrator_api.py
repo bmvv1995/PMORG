@@ -92,6 +92,9 @@ class PmorgOrchestratorApi(models.AbstractModel):
         actor = payload.get("actor") or {}
         if not isinstance(actor, dict) or not actor.get("id"):
             raise ApiError("E_AUTH", "Actor lipsă sau fără identitate.")
+        params = payload.get("params", {})
+        if not isinstance(params, dict):
+            raise ApiError("E_SCHEMA", "params trebuie să fie obiect JSON.")
         if mutant and not payload.get("idempotency_key"):
             raise ApiError(
                 "E_SCHEMA", "idempotency_key este obligatoriu la comenzi mutante."
@@ -171,18 +174,44 @@ class PmorgOrchestratorApi(models.AbstractModel):
     # -------------------------------------------------------------- dispatch
 
     @api.model
-    def _request_hash(self, command, payload):
-        """Hash canonic al cererii: comandă + params, fără anvelopă.
+    def _request_hash(self, command, payload, params):
+        """Amprentă deterministă a cererii (algoritm de canonicalizare v2).
 
-        message_id/occurred_at variază legitim la retry; identitatea cererii
-        e conținutul ei semantic.
+        Proiecția stabilă = identitatea semantică a cererii: câmpurile care,
+        dacă diferă, o fac o cerere DIFERITĂ pe aceeași cheie de idempotency.
+        Include `company_id` (e în anvelopă, nu în params) și `actor.type`,
+        ca replay-ul să nu poată sări peste scoping-ul de companie/actor.
+        Exclude metadata care variază legitim la retry: `message_id`,
+        `occurred_at`, `causation_id`. (`actor.id` e deja în cheia inbox.)
+
+        Canonicalizare: `json.dumps(sort_keys, separators fără spații,
+        ensure_ascii=False, allow_nan=False)`. NU normalizează formele
+        numerice (1 vs 1.0) sau număr-vs-string — divergența lor produce
+        hash-uri diferite (fail-closed: conflict, niciodată replay greșit).
+        NU este RFC 8785 și nu poate fi importată drept autoritate v3
+        (v3 cere RFC 8785 — 09/14).
         """
-        canonical = json.dumps(
-            {"command": command, "params": payload.get("params") or {}},
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
+        actor = payload.get("actor") or {}
+        projection = {
+            "schema_version": payload.get("schema_version"),
+            "company_id": payload.get("company_id"),
+            "actor_type": actor.get("type"),
+            "correlation_id": payload.get("correlation_id"),
+            "command": command,
+            "params": params,
+        }
+        try:
+            canonical = json.dumps(
+                projection,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+        except ValueError as exc:
+            raise ApiError(
+                "E_SCHEMA", "params conține valori nepermise (NaN/Infinity)."
+            ) from exc
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     @api.model
@@ -190,6 +219,8 @@ class PmorgOrchestratorApi(models.AbstractModel):
         mutant = command not in READ_ONLY_COMMANDS
         try:
             self._validate_envelope(payload, mutant)
+            params = payload.get("params", {})
+            request_hash = self._request_hash(command, payload, params)
         except ApiError as exc:
             return {
                 "status": "error",
@@ -201,7 +232,6 @@ class PmorgOrchestratorApi(models.AbstractModel):
 
         actor_id = payload["actor"]["id"]
         key = payload.get("idempotency_key")
-        request_hash = self._request_hash(command, payload)
         Inbox = self.env["pmorg.command.inbox"]
 
         if mutant:
@@ -239,7 +269,7 @@ class PmorgOrchestratorApi(models.AbstractModel):
         else:
             try:
                 with self.env.cr.savepoint():
-                    result = handler(payload, payload.get("params") or {})
+                    result = handler(payload, params)
                 response = {"status": "ok", "result": result}
             except ApiError as exc:
                 response = {
