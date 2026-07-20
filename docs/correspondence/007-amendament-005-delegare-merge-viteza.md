@@ -6,7 +6,7 @@
 | Decident | owner (Bogdan) |
 | Consemnat de | Claude (supervizor/verificator) |
 | Amendează | `005-protocol-supervizor-executie.md` §2–4 |
-| Validitate | normativ la merge; acest merge îl face implementer-ul (cross-agent), nu ownerul. |
+| Validitate | normativ la merge de către **owner** — acest amendament e bootstrap-ul delegării, deci se merge-uiește de owner ca predecesorii (005/006). Regula „canon scris de supervizor → merge cross-agent de implementer" (§2) se aplică canonului **viitor**, după ce 007 intră în vigoare; nu se poate aplica lui însuși. |
 
 ## 1. Cauza
 
